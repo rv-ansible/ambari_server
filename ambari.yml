@@ -1,0 +1,324 @@
+---
+
+- name: Get disk info and mail it 
+  hosts: all 
+  become: true
+  any_errors_fatal: True
+  vars:
+    log_file:
+    log_file_tower:
+    path_log:
+    tmp_folder: /tmp/ambari_tmp                   
+    send_mail: false
+    partition: 1
+    raw_prefix: ""  # ie sd or mpath
+    filename1: email
+    ext: txt
+    include_mpath: false
+    letters:
+      - b
+      - c
+      - d
+      - e
+  roles: 
+    - { role: mail_logs, create_log: true, lines: true } 
+    - { role: disk, get_raw_disk_prefix: true, become: true, include_mpath: false }
+    - { role: disk, get_raw_disk: true, become: true }
+    - { role: mail_logs, mail: true } 
+    #- { role: common, add_email: true }  
+  tags: get_raw_disk    
+  
+- name: Create inventory
+  hosts: all 
+  vars:
+    log_file:
+    log_file_tower:
+    path_log:
+    tmp_folder: /tmp/ambari_tmp                   
+    send_mail: false
+    partition: 1
+    fs_name: hadoop
+    #disk_size_2check: 10
+    raw_prefix: ""  # ie sd or mpath
+    filename1: email
+    ext: txt
+    include_mpath: false
+    letters:
+      - b
+      - c
+      - d
+      - e    
+    skip_disks:   # extra-vars or survey ex server1sdb or edit the extra-vars ex - serversde
+  roles: 
+    - { role: mail_logs, create_log: true, lines: false }   
+    - { role: disk, get_raw_disk_prefix: true, become: true, include_mpath: false }
+    - { role: disk, create_inventory: true, become: true, fs_name: hadoop }
+    - { role: mail_logs, mail: true, send_mail: false } 
+  tags: create_inventory    
+    
+- name: Create partition   
+  hosts: all
+  become: true
+  any_errors_fatal: True
+  vars:
+    partition: 1
+    include_mpath: false
+    skip_disks:   # extra-vars or survey ex server1sdb or edit the extra-vars ex - serversde
+    disk_items:
+      - { server0: spark, disk0: sdb, fsname0: '/hadoop/1', vgname0: hadoop1vg, lvname0: hadoop1lv, size0: 5g } # 21.5
+      - { server0: spark, disk0: sdc, fsname0: '/hadoop/2', vgname0: hadoop2vg, lvname0: hadoop2lv, size0: 5g } # 21.5
+  tasks:
+    - name: Loop over role
+      include_role:
+       name: disk
+      vars:
+        disk_process: DPVLFM   # D=create raw disk P=physical volume V=volumegroup L=logicalvolume F=filesystem M=mount
+        create_partition_nolog: true
+        server: "{{ item.server0 }}"
+        disk1:  "{{ item.disk0 }}"
+        pvname: "{{ item.disk0 }}"
+        fsname: "{{ item.fsname0 }}"
+        vgname: "{{ item.vgname0 }}"
+        lvname: "{{ item.lvname0 }}"
+        size: "{{ item.size0 }}"
+      with_items: 
+         - "{{disk_items}}"
+  tags: create_partition
+
+- name: Remove partition   
+  hosts: all
+  become: true
+  any_errors_fatal: True
+  vars:
+    partition: 1
+    include_mpath: false
+    disk_items:
+      - { server0: spark, disk0: sdb, fsname0: '/hadoop/1', vgname0: hadoop1vg, lvname0: hadoop1lv, size0: +100%FREE } # 21.5
+      - { server0: spark, disk0: sdc, fsname0: '/hadoop/2', vgname0: hadoop2vg, lvname0: hadoop2lv, size0: +100%FREE } # 21.5
+  tasks:
+    - name: Loop over role
+      include_role:
+       name: disk
+      vars:
+        disk_process: DPVLFM
+        force: yes
+        remove_partition_nolog: true
+        server: "{{ item.server0 }}"
+        disk1:  "{{ item.disk0 }}"
+        pvname: "{{ item.disk0 }}"
+        fsname: "{{ item.fsname0 }}"
+        vgname: "{{ item.vgname0 }}"
+        lvname: "{{ item.lvname0 }}" # size is not needed
+      with_items: 
+         - "{{disk_items}}"
+  tags: remove_partition
+  
+- name: Resize Disk (logical)  
+  hosts: all
+  become: true
+  any_errors_fatal: True
+  vars:
+    disk_items:
+      - { server0: master2, disk0: sdb, fsname0: '/hadoop/1', vgname0: hadoop1vg, lvname0: hadoop1lv, size0: 10g }
+      - { server0: master2, disk0: sdc, fsname0: '/hadoop/2', vgname0: hadoop2vg, lvname0: hadoop2lv, size0: 10g }
+  tasks:
+    - name: Loop over role
+      include_role:
+       name: disk
+      vars:
+        resize_logical: true
+        server: "{{ item.server0 }}"
+        disk1:  "{{ item.disk0 }}"
+        pvname: "{{ item.disk0 }}"
+        fsname: "{{ item.fsname0 }}"
+        vgname: "{{ item.vgname0 }}"
+        lvname: "{{ item.lvname0 }}"
+        size: "{{ item.size0 }}"
+      with_items: 
+         - "{{disk_items}}"
+  tags: resize_disk  
+   
+- name: Configure User and set no password for ambari
+  hosts: all
+  become: true
+  any_errors_fatal: True
+  vars: 
+    passwd1: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          66333039366266376366633438623837646237383062333861343635393934636566373765326665
+          6132323161323439316232306462396465366365666366370a653130346366366264333430336433
+          62656563363030336339303538373262633230396530343835356561643831303532656333323531
+          3333666430303239660a393138386161393239343163666139636265353564373066383238666639
+          3231
+  roles:
+    - { role: common, add_user: true, user1: ambari, miscellaneous: true}
+    - { role: common, add_sshkey: true, user1: ambari }  
+    - { role: common, add_sshkey2: true, user1: root }
+    - { role: common, edit_bahrc: true, user1: ambari }
+  tags: configure_user
+
+- name: Configure Server master only
+  hosts: master
+  become: true
+  any_errors_fatal: True
+  vars:
+    Package_name: jdk-8u181-linux-x64.tar.gz
+    install_dir: /usr/java
+    dbname: oracle
+    oracle_jdk_var_lib:  /var/lib/ambari-server/ojdbc8.jar
+    oracle_jdk_usr_share:  /usr/share/java/ojdbc8.jar
+    rhel_7:
+      - httpd
+      - createrepo     
+    dbname: oracle    
+  roles:
+    - { role: config, yum: true }
+  tags: configure_server
+
+- name: Configure Server All
+  hosts: all
+  become: true
+  any_errors_fatal: True
+  vars:
+    Package_name: jdk-8u181-linux-x64.tar.gz
+    install_dir: /usr/java
+    rhel_7:
+      - java-1.8.0-openjdk-devel.x86_64
+    dbname: oracle    
+  roles:
+    - { role: config, yum: true }
+    - { role: config, selinux: true, reboot: true } # SELINUX NEED REBOOT TO TAKE EFFECT
+  tags: configure_server
+
+  
+- name: Download ambari yum
+  hosts: master # master
+  become: true
+  any_errors_fatal: True  
+  vars:
+    repo_path: /systemfiles/repo/ # end with /
+    httpd_path:  /var/www/html/
+    artifacts_dest: "{{repo_path}}"
+    create_dest: true
+    owner_folder: root
+    group_folder: root
+    mode_folder: 0755
+    owner_file: root
+    group_file: root
+    mode_file: 0755
+    artifactslist:
+       - ambari-2.7.4.0-centos7.tar.gz
+       - HDP-3.1.4.0-centos7-rpm.tar.gz
+       - HDP-UTILS-1.1.0.22-centos7.tar.gz
+    repopathlist:
+      - '{{repo_path}}ambari'
+      - '{{repo_path}}HDP'
+      - '{{repo_path}}HDP-UTILS'
+    rhel_7_master:  
+      - createrepo
+      - httpd      
+  roles:
+    - { role: ambari , yum_master: true }
+    - { role: ambari , createrepo: true }
+  tags: ambari_yum
+
+- name: Copy ambari yum to all
+  hosts: all
+  become: true
+  any_errors_fatal: True  
+  vars:
+    hostrepo: "{{groups['master'][0]}}" 
+  roles:
+    - { role: config , copyrepo: true }
+  tags: ambari_yum
+
+- name: Install Ambari Server Master
+  hosts: master # master
+  become: true
+  any_errors_fatal: True
+  vars:
+     ambariserverlist:
+        - ambari-server
+        - ambari-metrics-monitor
+        - ambari-metrics-grafana
+        - ambari-agent
+        - ambari-metrics-hadoop-sink
+        - hdp-select
+  roles:
+    - { role: config, ambari_server: true }
+  tags: 
+     - ambari_master1
+
+- name: Install Ambari agent Master-member
+  hosts: master-member # master-member
+  become: true
+  any_errors_fatal: True
+  vars:
+     ambariserverlist:
+        - ambari-agent
+        - ambari-metrics-monitor
+        - ambari-metrics-collector
+        - ambari-metrics-hadoop-sink
+        - ambari-infra-solr-client
+        - hdp-select
+  roles:
+    - { role: config, ambari_server: true }
+  tags: 
+     - ambari_master_member
+
+- name: Install Ambari agent kakfa/spark
+  hosts: client
+  become: true
+  any_errors_fatal: True
+  vars:
+     ambariserverlist:
+        - ambari-agent
+        - ambari-metrics-monitor
+        - ambari-metrics-hadoop-sink
+        - hdp-select
+  roles:
+    - { role: config, ambari_server: true }
+  tags: 
+     - ambari_agent
+     
+- name: Run ambari-agent
+  hosts: all
+  become: true
+  any_errors_fatal: True
+  roles:
+    - { role: ambari, ambari_agent_run: true }
+  tags: 
+     - ambari_agent_run
+            
+#- name: download jdbc /var/lib/ambari-server
+#  hosts: master
+#  become: true
+#  any_errors_fatal: True
+#  vars:
+#    artifacts: ojdbc8.jar
+#    artifacts_dest: /var/lib/ambari-server/
+#    create_dest: true
+#    owner_folder: ambari
+#    group_folder: root
+#    mode_folder: 0755
+#    owner_file: ambari
+#    group_file: root
+#    mode_file: 0700     
+#  roles:
+#    - { role: artifactory, download: true }
+#    - { role: artifactory, download: true, owner_folder: root, owner_file: root, mode_file: 0755, artifacts_dest: /usr/share/java/ }
+#  tags: 
+#     - download_jdbc
+            
+- name: Run ambari-server
+  hosts: master
+  become: true
+  any_errors_fatal: True
+  vars:
+    user1: AMBARI
+    
+  roles:
+    - { role: ambari, ambari_server_run: true }
+  tags: 
+     - ambari_server_run
+                        

@@ -1,0 +1,9 @@
+[master]
+master1 ansible_host=192.168.3.128
+
+[master-member] 
+master2 ansible_host=192.168.3.129
+
+[client]
+kafka ansible_host=192.168.3.130
+spark ansible_host=192.168.3.131

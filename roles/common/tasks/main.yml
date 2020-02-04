@@ -1,0 +1,29 @@
+---
+
+- include_tasks: add_ip.yml
+  when: add_ip|default(False)==True
+
+- include_tasks: add_email.yml
+  when: add_email|default(False)==True       
+  
+- include_tasks: mv_inventory.yml
+  when: mv_inventory|default(False)==True     
+
+- include_tasks: add_user.yml
+  when: add_user|default(False)==True     
+
+- include_tasks: miscellaneous.yml
+  when: miscellaneous|default(False)==True     
+
+- include_tasks: add_sshkey.yml
+  when: add_sshkey|default(False)==True
+
+- include_tasks: add_sshkey2.yml
+  when: add_sshkey2|default(False)==True   
+
+- include_tasks: edit_bashrc.yml
+  when: edit_bashrc|default(False)==True    
+  
+- include_tasks: extract.yml
+  when: extract|default(False)==True    
+    

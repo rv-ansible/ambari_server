@@ -1,0 +1,9 @@
+---
+
+- name: Disable SELinux
+  selinux: 
+      state: disabled
+            
+- name: Reboot Server
+  shell: shutdown -r now
+  when: reboot|default(False)==True             

@@ -1,0 +1,9 @@
+---
+
+- name: Write hostname and IP address to hosts file
+  lineinfile: 
+      dest: /etc/hosts 
+      regexp: "^{{ item }}"
+      line: "{{ item }}"
+  with_items: 
+      - "{{ambari_ip}}"

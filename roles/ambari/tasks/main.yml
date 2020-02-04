@@ -1,0 +1,16 @@
+---
+  
+- include_tasks: ambari_agent.yml
+  when: ambari_agent_run|default(False)==True     
+  
+- include_tasks: ambari_server.yml
+  when: ambari_server_run|default(False)==True     
+  
+- include_tasks: yum_master.yml
+  when: yum_master|default(False)==True     
+  
+- include_tasks: createrepo.yml
+  when: createrepo|default(False)==True     
+
+  
+  

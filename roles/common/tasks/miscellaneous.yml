@@ -1,0 +1,18 @@
+---
+# set umask - sudoers
+
+- name: Set user to umask
+  lineinfile:
+    path: ~/.bashrc
+    regexp: '^umask'
+    line: 'umask 022'
+  become_user: '{{user1}}'   
+  
+- name:     Allow {{user1}} to sudoers
+  lineinfile:
+    dest:         /etc/sudoers
+    state:        present
+    regexp:       '^{{user1}}'
+    line:         '{{user1}} ALL=(ALL) NOPASSWD: ALL'
+    validate:     'visudo -cf %s'      
+    

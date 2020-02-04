@@ -1,0 +1,29 @@
+---
+
+- name: run create repo
+  shell: "createrepo {{item}}"
+  with_items:
+     - "{{repopathlist}}"
+     
+- name: change permission of the repo     
+  shell: "chmod 0755 -R {{repo_path}}"
+  
+- name: change chown of the repo     
+  shell: "chown root:root -R {{repo_path}}"
+  
+- name: create repo link
+  shell: "ln -s {{repo_path}} {{httpd_path}}/repo"  
+  
+- name: start httpd
+  service:
+    name: httpd
+    state: restarted
+
+- name: bootstarp httpd
+  service:
+    name: httpd
+    enabled: yes
+    
+- name: yum clean
+  shell: yum clean all
+              
