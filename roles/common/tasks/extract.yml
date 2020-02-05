@@ -17,4 +17,3 @@
   when: x is not failed and deleteartifact|default(False)==True
   with_items:
     - "{{artifactslist}}"
-

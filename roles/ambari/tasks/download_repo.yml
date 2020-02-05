@@ -1,0 +1,28 @@
+---
+
+- name: Download ambari
+  get_url:
+    url: "{{item.url}}{{item.name}}"
+    dest: "{{artifacts_dest}}"
+    mode: "0755"
+    #retries: 3
+  with_items: "{{artifactslist}}"
+
+- name: Extract {{ item }}
+  shell: "tar -xvzf {{ artifacts_dest }}{{ item.name }}"
+  args:
+     chdir: "{{ artifacts_dest }}" 
+  become: true
+  register: x 
+  with_items:
+    - "{{artifactslist}}"
+
+- name: Delete {{ item }}
+  file:
+    path: "{{ artifacts_dest }}{{ item.name }}"
+    state: absent
+  become: true
+  when: x is not failed
+  with_items:
+    - "{{artifactslist}}"
+  

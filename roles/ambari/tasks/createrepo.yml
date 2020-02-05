@@ -6,13 +6,13 @@
      - "{{repopathlist}}"
      
 - name: change permission of the repo     
-  shell: "chmod 0755 -R {{repo_path}}"
+  shell: "chmod 0755 -R {{artifacts_dest}}"
   
 - name: change chown of the repo     
-  shell: "chown root:root -R {{repo_path}}"
+  shell: "chown root:root -R {{artifacts_dest}}"
   
 - name: create repo link
-  shell: "ln -s {{repo_path}} {{httpd_path}}/repo"  
+  shell: "ln -s {{artifacts_dest}} {{httpd_path}}/repo"  
   
 - name: start httpd
   service:

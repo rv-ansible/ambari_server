@@ -8,9 +8,13 @@
   
 - include_tasks: yum_master.yml
   when: yum_master|default(False)==True     
+
+- include_tasks: download_repo.yml
+  when: download_repo|default(False)==True     
   
 - include_tasks: createrepo.yml
-  when: createrepo|default(False)==True     
+  when: createrepo|default(False)==True       
 
-  
+- include_tasks: ojdbc.yml
+  when: ojdbc|default(False)==True       
   
