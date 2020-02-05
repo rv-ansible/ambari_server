@@ -211,8 +211,8 @@
       - createrepo
       - httpd      
   roles:
-#    - { role: ambari , yum_master: true }  
-#    - { role: ambari , download_repo: true }
+    - { role: ambari , yum_master: true }  
+    - { role: ambari , download_repo: true }
     - { role: ambari , createrepo: true }
   tags: ambari_yum
 
