@@ -305,7 +305,6 @@
   any_errors_fatal: True
   vars:
     user1: AMBARI
-    
   roles:
     - { role: ambari, ambari_server_run: true }
   tags: 
