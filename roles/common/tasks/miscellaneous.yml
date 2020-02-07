@@ -14,5 +14,6 @@
     state:        present
     regexp:       '^{{user1}}'
     line:         '{{user1}} ALL=(ALL) NOPASSWD: ALL'
-    validate:     'visudo -cf %s'      
+    validate:     'visudo -cf %s'     
+  when: sudoe|default(False)==True    
     

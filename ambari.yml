@@ -65,8 +65,10 @@
     include_mpath: false
     skip_disks:   # extra-vars or survey ex server1sdb or edit the extra-vars ex - serversde
     disk_items:
-      - { server0: spark, disk0: sdb, fsname0: '/hadoop/1', vgname0: hadoop1vg, lvname0: hadoop1lv, size0: 5g } # 21.5
-      - { server0: spark, disk0: sdc, fsname0: '/hadoop/2', vgname0: hadoop2vg, lvname0: hadoop2lv, size0: 5g } # 21.5
+      - { server0: master1, disk0: sdb, fsname0: '/hadoop/1', vgname0: hadoop1vg, lvname0: hadoop1lv, size0: 5g } # 21.5
+      - { server0: master1, disk0: sdc, fsname0: '/hadoop/2', vgname0: hadoop2vg, lvname0: hadoop2lv, size0: 5g } # 21.5
+      - { server0: master2, disk0: sdb, fsname0: '/hadoop/1', vgname0: hadoop1vg, lvname0: hadoop1lv, size0: 5g } # 21.5
+      - { server0: master2, disk0: sdc, fsname0: '/hadoop/2', vgname0: hadoop2vg, lvname0: hadoop2lv, size0: 5g } # 21.5
   tasks:
     - name: Loop over role
       include_role:
@@ -151,7 +153,9 @@
           3333666430303239660a393138386161393239343163666139636265353564373066383238666639
           3231
   roles:
-    - { role: common, add_user: true, user1: ambari, miscellaneous: true}
+    - { role: common, add_user: true, user1: ambari, sudoe: true}
+    - { role: common, miscellaneous: true, user1: ambari, sudoe: true}
+    - { role: common, miscellaneous: true, user1: root, sudoe: true}
     - { role: common, add_sshkey: true, user1: ambari }  
     - { role: common, add_sshkey2: true, user1: root }
     - { role: common, edit_bahrc: true, user1: ambari }

@@ -33,9 +33,9 @@
   when: inventory_hostname in groups['master'][0]  
   ignore_errors: true
   
-#- name: Copy sshkeys of {{groups['master'][0]}} to {{ groups['master'][2] }}
-#  shell: "scp -o ConnectTimeout=5 -o BatchMode=yes ~/.ssh/id_rsa* {{groups['master'][2]}}:~/.ssh"
-#  become_user: '{{user1}}'    
-#  when: inventory_hostname in groups['master'][0]    
-#  ignore_errors: true
-  
+- name: Copy sshkeys of {{groups['master'][0]}} to {{ groups['master-member'][2] }}
+  shell: "scp -o ConnectTimeout=5 -o BatchMode=yes ~/.ssh/id_rsa* {{groups['master-member'][1]}}:~/.ssh"
+  become_user: '{{user1}}'    
+  when: inventory_hostname in groups['master'][0]    
+  ignore_errors: true
+ 

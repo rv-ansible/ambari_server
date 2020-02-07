@@ -1,12 +1,18 @@
 ---
 
+- name: Create a directory if it does not exist {{artifacts_dest}}
+  file:
+    path: '{{artifacts_dest}}'
+    state: directory
+    mode: 0755
+
 - name: Download ambari
   get_url:
     url: "{{item.url}}{{item.name}}"
     dest: "{{artifacts_dest}}"
     mode: "0755"
-    #retries: 3
   with_items: "{{artifactslist}}"
+  when: donotexec|default(False)==True    
 
 - name: Extract {{ item }}
   shell: "tar -xvzf {{ artifacts_dest }}{{ item.name }}"
