@@ -1,7 +1,8 @@
 ---
 
 - name: Generate ssh key of {{user1}} on {{groups['master'][0]}}
-  shell: sudo su - {{user1}} -c '[ `hostname` == "{{groups['master'][0]}}" ] && [ ! -f  ~/.ssh/id_rsa ] && ssh-keygen -t rsa -f ~/.ssh/id_rsa -q -P "" || mkdir -p ~/.ssh && chmod 0700 ~/.ssh'
+  shell: sudo su - {{user1}} -c '[ ! -f  ~/.ssh/id_rsa ] && ssh-keygen -t rsa -f ~/.ssh/id_rsa -q -P "" || mkdir -p ~/.ssh && chmod 0700 ~/.ssh'
+  when: inventory_hostname in groups['master']
   
 - name: Copy public key to ansible 
   fetch: 
@@ -9,7 +10,7 @@
     dest: ./id_rsa.pub
     flat: yes
   become_user: '{{user1}}'    
-  when: inventory_hostname in groups['master'][0]
+  when: inventory_hostname in groups['master']
      
 - name: Copy public key to all
   copy:
@@ -26,16 +27,14 @@
     mode: 0400   
     force: no   
   become_user: '{{user1}}'
-  
-- name: Copy sshkeys of {{groups['master'][0]}} to {{ groups['master-member'][0] }}
+    
+- name: Copy sshkeys of {{groups['master']}} to {{ groups['master-member'][0] }}
   shell: "scp -o ConnectTimeout=5 -o BatchMode=yes ~/.ssh/id_rsa* {{groups['master-member'][0]}}:~/.ssh"
   become_user: '{{user1}}'    
-  when: inventory_hostname in groups['master'][0]  
-  ignore_errors: true
+  when: inventory_hostname in groups['master']  
   
-- name: Copy sshkeys of {{groups['master'][0]}} to {{ groups['master-member'][2] }}
+- name: Copy sshkeys of {{groups['master']}} to {{ groups['master-member'][1] }}
   shell: "scp -o ConnectTimeout=5 -o BatchMode=yes ~/.ssh/id_rsa* {{groups['master-member'][1]}}:~/.ssh"
   become_user: '{{user1}}'    
-  when: inventory_hostname in groups['master'][0]    
+  when: inventory_hostname in groups['master']    
   ignore_errors: true
- 

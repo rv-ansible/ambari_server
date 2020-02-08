@@ -143,7 +143,7 @@
 - name: Configure User and set no password for ambari
   hosts: all
   become: true
-  any_errors_fatal: True
+  #any_errors_fatal: True
   vars: 
     passwd1: !vault |
           $ANSIBLE_VAULT;1.1;AES256
@@ -157,8 +157,7 @@
     - { role: common, miscellaneous: true, user1: ambari, sudoe: true}
     - { role: common, miscellaneous: true, user1: root, sudoe: true}
     - { role: common, add_sshkey: true, user1: ambari }  
-    - { role: common, add_sshkey2: true, user1: root }
-    - { role: common, edit_bahrc: true, user1: ambari }
+    - { role: common, add_sshkey: true, user1: root }
   tags: configure_user
 
 - name: Configure Server master only
