@@ -154,7 +154,7 @@
           3231
     u_mask: "022"
   roles:
-    #- { role: common, add_user: true, user1: ambari, sudoe: true}
+    #- { role: common, add_user: true, user1: ambari }
     #- { role: common, miscellaneous: true, user1: ambari, sudoer: true, adgroup: "", adnetbios: "" }
     #- { role: common, miscellaneous: true, user1: root, sudoer: false, adgroup: "", adnetbios: "" }
     #- { role: common, miscellaneous: true, user1: app_admin, sudoer: true, adgroup: "app_group", adnetbios: "TEST007" }

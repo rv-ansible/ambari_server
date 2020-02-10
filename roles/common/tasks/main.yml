@@ -20,9 +20,6 @@
 
 - include_tasks: add_sshkey2.yml
   when: add_sshkey2|default(False)==True   
-
-- include_tasks: edit_bashrc.yml
-  when: edit_bashrc|default(False)==True    
   
 - include_tasks: extract.yml
   when: extract|default(False)==True    
