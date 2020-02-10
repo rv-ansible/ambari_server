@@ -315,3 +315,18 @@
     - { role: ambari, ambari_server_run: true }
   tags: 
      - ambari_server_run                        
+
+     
+- name: Disable tmp cleanup
+  hosts: all
+  become: true
+  any_errors_fatal: True
+  vars:
+    tmp_file_path: '/etc/tmpfiles.d/'
+    hadoop1log_path: '/hadoop/1/log/'
+    user1: ambari
+  roles:
+    - { role: common, disable_tmp_cleanup: true }
+  tags: 
+     - disable_tmp_cleanup
+                             

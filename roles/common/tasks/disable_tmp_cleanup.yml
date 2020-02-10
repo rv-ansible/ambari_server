@@ -1,0 +1,117 @@
+---
+
+- name: Disable 10 days /tmp cleanup
+  lineinfile:
+    path: /usr/lib/tmpfiles.d/tmp.conf
+    regexp: 'v /tmp 1777 root root 10d'
+    line: '#v /tmp 1777 root root 10d'
+
+- name: Disable 30 days /var/tmp cleanup
+  lineinfile:
+    path: /usr/lib/tmpfiles.d/tmp.conf
+    regexp: 'v /var/tmp 1777 root root 30d'
+    line: '#v /var/tmp 1777 root root 30d'
+    
+- name: Create tgt_tmpfiles.conf
+  shell: "echo 'x /tmp/krb5cc*' >> tgt_tmpfiles.conf"
+  args:
+    chdir: "{{tmp_file_path}}"
+    
+- name: Make sure this exist {{hadoop1log_path}} 
+  file:
+    path: "{{hadoop1log_path}}"
+    state: directory
+    mode: '0755'
+    
+- name: Check folder
+  stat:
+    path: '{{hadoop1log_path}}ambari-agent'
+  register: w
+
+- fail:
+    msg: "ERROR: {{hadoop1log_path}}ambari-agent ALREADY EXIST ######################"
+  when: w.stat.exists and w.stat.isdir      
+       
+- block:               
+    - name: Copy ambari logs
+      shell: |
+             mv /var/log/ambari-agent/ {{hadoop1log_path}}
+             mv /var/log/ambari-server/ {{hadoop1log_path}}
+      register: x
+      
+    - name: fail the play 1
+      fail:
+        msg: "ERROR: copying /var/log/ambari-(server/agent) failed ######################"
+      when: x is failed  
+      
+    - name: create server link
+      shell: |
+             ln -s {{hadoop1log_path}}ambari-agent /var/log/ambari-agent
+             ln -s {{hadoop1log_path}}ambari-server /var/log/ambari-server  
+      register: z
+    
+    - name: Success link
+      debug:
+        msg: "SUCCESS: link on {{hadoop1log_path}}(ambari-server/agent) to /hadoop/1/log ######################"
+      when: z is not failed  
+    
+    - name: the link failed
+      fail:
+        msg: "ERROR: creating link on  {{hadoop1log_path}}(ambari-server/agent) to /hadoop/1/log  ######################"
+      when: z is failed  
+  when: inventory_hostname in groups['master']  
+  
+- block:               
+    - name: Copy ambari logs
+      shell: |
+             mv /var/log/ambari-agent/ {{hadoop1log_path}}
+      register: x
+      
+    - name: fail the play 1
+      fail:
+        msg: "ERROR: copying /var/log/ambari-agent failed ######################"
+      when: x is failed  
+      
+    - name: create server link
+      shell: |
+             ln -s {{hadoop1log_path}}ambari-agent /var/log/ambari-agent
+      register: z
+    
+    - name: Success link
+      debug:
+        msg: "SUCCESS: link on {{hadoop1log_path}}agent to /hadoop/1/log ######################"
+      when: z is not failed  
+    
+    - name: the link failed
+      fail:
+        msg: "ERROR: creating link on  {{hadoop1log_path}}ambari-agent to /hadoop/1/log  ######################"
+      when: z is failed  
+  when: inventory_hostname in groups['master-member'] 
+  
+- block:               
+    - name: Copy ambari logs
+      shell: |
+             mv /var/log/ambari-agent/ {{hadoop1log_path}}
+      register: x
+      
+    - name: fail the play 1
+      fail:
+        msg: "ERROR: copying /var/log/ambari-agent failed ######################"
+      when: x is failed  
+      
+    - name: create server link
+      shell: |
+             ln -s {{hadoop1log_path}}ambari-agent /var/log/ambari-agent
+      register: z
+    
+    - name: Success link
+      debug:
+        msg: "SUCCESS: link on {{hadoop1log_path}}agent to /hadoop/1/log ######################"
+      when: z is not failed  
+    
+    - name: the link failed
+      fail:
+        msg: "ERROR: creating link on  {{hadoop1log_path}}ambari-agent to /hadoop/1/log  ######################"
+      when: z is failed  
+  when: inventory_hostname in groups['client'] 
+ 
