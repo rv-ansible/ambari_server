@@ -1,9 +1,13 @@
 ---
 
+- name: Create .ssh folder if not exist
+  shell: "sudo su - '{{user1}}' -c '[ -d $PWD/.ssh ] && echo WARNING-FOLDER-ALREADY-EXIST||mkdir -p $PWD/.ssh'" 
+
 - name: Generate ssh key of {{user1}} on {{groups['master'][0]}}
   shell: sudo su - {{user1}} -c '[ ! -f  ~/.ssh/id_rsa ] && ssh-keygen -t rsa -f ~/.ssh/id_rsa -q -P "" || mkdir -p ~/.ssh && chmod 0700 ~/.ssh'
   when: inventory_hostname in groups['master']
   
+- meta: end_play  
 - name: Copy public key to ansible 
   fetch: 
     src: ~/.ssh/id_rsa.pub
@@ -38,3 +42,4 @@
   become_user: '{{user1}}'    
   when: inventory_hostname in groups['master']    
   ignore_errors: true
+  

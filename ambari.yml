@@ -143,7 +143,7 @@
 - name: Configure User and set no password for ambari
   hosts: all
   become: true
-  #any_errors_fatal: True
+  any_errors_fatal: True
   vars: 
     passwd1: !vault |
           $ANSIBLE_VAULT;1.1;AES256
@@ -152,12 +152,15 @@
           62656563363030336339303538373262633230396530343835356561643831303532656333323531
           3333666430303239660a393138386161393239343163666139636265353564373066383238666639
           3231
+    u_mask: "022"
   roles:
-    - { role: common, add_user: true, user1: ambari, sudoe: true}
-    - { role: common, miscellaneous: true, user1: ambari, sudoe: true}
-    - { role: common, miscellaneous: true, user1: root, sudoe: true}
-    - { role: common, add_sshkey: true, user1: ambari }  
-    - { role: common, add_sshkey: true, user1: root }
+    #- { role: common, add_user: true, user1: ambari, sudoe: true}
+    #- { role: common, miscellaneous: true, user1: ambari, sudoer: true, adgroup: "", adnetbios: "" }
+    #- { role: common, miscellaneous: true, user1: root, sudoer: false, adgroup: "", adnetbios: "" }
+    #- { role: common, miscellaneous: true, user1: app_admin, sudoer: true, adgroup: "app_group", adnetbios: "TEST007" }
+    #- { role: common, add_sshkey: true, user1: ambari }  
+    #- { role: common, add_sshkey: true, user1: root }
+    - { role: common, add_sshkey2: true, user1: app_admin, adnetbios: "TEST007" }
   tags: configure_user
 
 - name: Configure Server master only
@@ -311,5 +314,4 @@
   roles:
     - { role: ambari, ambari_server_run: true }
   tags: 
-     - ambari_server_run
-                        
+     - ambari_server_run                        

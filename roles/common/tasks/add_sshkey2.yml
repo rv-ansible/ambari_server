@@ -1,38 +1,48 @@
 ---
 
-- name: Generate ssh key of {{user1}} on {{ inventory_host }}
-  shell: sudo su - {{user1}} -c '[ `hostname` == "{{ item }}" ] && [ ! -f  ~/.ssh/id_rsa ] && ssh-keygen -t rsa -f ~/.ssh/id_rsa -q -P "" || mkdir -p ~/.ssh && chmod 0700 ~/.ssh'
-  become_user: '{{ user1 }}'
-  delegate_to: "{{ item }}"
-  loop: "{{ groups.master }}"
+- name: Create AD .ssh folder if not exist
+  shell: "sudo su - '{{adnetbios}}\\{{user1}}' -c '[ -d $PWD/.ssh ] && echo WARNING-FOLDER-ALREADY-EXIST || mkdir -p $PWD/.ssh'"
+
+- name: chmod 0700
+  shell: "sudo su - '{{adnetbios}}\\{{user1}}' -c 'chmod 0700 $PWD/.ssh'"
+  become: true
+           
+- name: Generate ssh key of {{user1}} on {{groups['master'][0]}}
+  shell: sudo su - '{{adnetbios}}\{{user1}}' -c '[ ! -f  ~/.ssh/id_rsa ] && ssh-keygen -t rsa -f ~/.ssh/id_rsa -q -P "" || mkdir -p ~/.ssh && chmod 0700 ~/.ssh'
+  when: inventory_hostname in groups['master']  
 
 - name: Copy public key to ansible 
   fetch: 
     src: ~/.ssh/id_rsa.pub
-    dest: ./{{ inventory_hostname }}.id_rsa.pub
+    dest: ./id_rsa.pub
     flat: yes
   become_user: '{{user1}}'    
-  when: inventory_hostname in groups['master'][0]
-
-
-- name: Register the ssh keys for each master 
-  shell: cat ~/.ssh/id_rsa.pub
-  become: true
-  become_user: '{{user1}}'
-  register: "ssh_keys"
   when: inventory_hostname in groups['master']
-
-- set_fact:
-  ssh_keys: "{{ ssh_keys }}"
-
-- name: Add keys to each host for the group
-  lineinfile:
-    path: ~/.ssh/authorized_keys
-    regexp: "{{ inventory_hostname }}"
-    state: present
-    line: '{{ hostvars[item].ssh_keys.stdout }}'
-    owner: "{{user1}}"
-    backup: yes
+- meta: end_play       
+- name: Copy public key to all
+  copy:
+    src: ./id_rsa.pub
+    dest: ~/.ssh/authorized_keys
+    mode: 0644 
+    force: no   
   become_user: '{{user1}}'
-  with_items: "{{ groups['master'] }}"
-  ignore_errors: true  
+
+- name: Copy config to all
+  copy:
+    src: config
+    dest: ~/.ssh/config
+    mode: 0400   
+    force: no   
+  become_user: '{{user1}}'
+    
+- name: Copy sshkeys of {{groups['master']}} to {{ groups['master-member'][0] }}
+  shell: "scp -o ConnectTimeout=5 -o BatchMode=yes ~/.ssh/id_rsa* {{groups['master-member'][0]}}:~/.ssh"
+  become_user: '{{user1}}'    
+  when: inventory_hostname in groups['master']  
+  
+- name: Copy sshkeys of {{groups['master']}} to {{ groups['master-member'][1] }}
+  shell: "scp -o ConnectTimeout=5 -o BatchMode=yes ~/.ssh/id_rsa* {{groups['master-member'][1]}}:~/.ssh"
+  become_user: '{{user1}}'    
+  when: inventory_hostname in groups['master']    
+  ignore_errors: true
+    
