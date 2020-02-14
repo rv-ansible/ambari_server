@@ -9,4 +9,4 @@ kafka ansible_host=192.168.3.130
 spark ansible_host=192.168.3.131
 
 [sql]
-db ansible_host=192.168.3.131
+db ansible_host=192.168.3.134
