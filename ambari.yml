@@ -320,7 +320,7 @@
 - name: Disable tmp cleanup
   hosts: all
   become: true
-  any_errors_fatal: True
+  #any_errors_fatal: True
   vars:
     tmp_file_path: '/etc/tmpfiles.d/'
     hadoop1log_path: '/hadoop/1/log/'

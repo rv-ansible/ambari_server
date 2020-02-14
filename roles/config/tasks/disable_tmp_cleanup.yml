@@ -30,7 +30,29 @@
 
 - fail:
     msg: "ERROR: {{hadoop1log_path}}ambari-agent ALREADY EXIST ######################"
-  when: w.stat.exists and w.stat.isdir      
+  when: w.stat.exists and w.stat.isdir   
+  
+- name: Make sure the ambari-agent service is stop
+  service:
+    name: ambari-agent
+    state: stopped
+  register: p
+    
+- name: the ambari-agent start failed!!!
+  fail:
+    msg: "ERROR: the ambari-agent start failed!!!  ######################"
+  when: p is failed      
+
+#- name: Make sure the ambari-server service is stop
+#  service:
+#    name: ambari-server
+#    state: stopped
+#  register: q
+#
+#- name: the ambari-server stop failed!!!
+#  fail:
+#    msg: "ERROR: the ambari-server stop failed!!!  ######################"
+#  when: q is failed  
        
 - block:               
     - name: Copy ambari logs
@@ -111,7 +133,29 @@
     
     - name: the link failed
       fail:
-        msg: "ERROR: creating link on  {{hadoop1log_path}}ambari-agent to /hadoop/1/log  ######################"
+        msg: "ERROR: creating link on {{hadoop1log_path}}ambari-agent to /hadoop/1/log  ######################"
       when: z is failed  
   when: inventory_hostname in groups['client'] 
+
+#- name: Make sure the ambari-server service is started
+#  service:
+#    name: ambari-server
+#    state: restarted
+#  register: r
+#  
+#- name: the ambari-server start failed!!!
+#  fail:
+#    msg: "ERROR: the ambari-server start failed!!!  ######################"
+#  when: r is failed  
  
+- name: Make sure the ambari-agent service is started
+  service:
+    name: ambari-agent
+    state: restarted
+  register: s
+
+- name: the ambari-agent start failed!!!
+  fail:
+    msg: "ERROR: the ambari-agent start failed!!!  ######################"
+  when: s is failed  
+    
