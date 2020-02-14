@@ -7,3 +7,6 @@ master2 ansible_host=192.168.3.129
 [client]
 kafka ansible_host=192.168.3.130
 spark ansible_host=192.168.3.131
+
+[sql]
+db ansible_host=192.168.3.131

@@ -25,7 +25,7 @@
     - { role: disk, get_raw_disk_prefix: true, become: true, include_mpath: false }
     - { role: disk, get_raw_disk: true, become: true }
     - { role: mail_logs, mail: true } 
-    #- { role: common, add_email: true }  
+    #- { role: config, add_email: true }  
   tags: get_raw_disk    
   
 - name: Create inventory
@@ -154,13 +154,13 @@
           3231
     u_mask: "022"
   roles:
-    #- { role: common, add_user: true, user1: ambari }
-    #- { role: common, miscellaneous: true, user1: ambari, sudoer: true, adgroup: "", adnetbios: "" }
-    #- { role: common, miscellaneous: true, user1: root, sudoer: false, adgroup: "", adnetbios: "" }
-    #- { role: common, miscellaneous: true, user1: app_admin, sudoer: true, adgroup: "app_group", adnetbios: "TEST007" }
-    #- { role: common, add_sshkey: true, user1: ambari }  
-    #- { role: common, add_sshkey: true, user1: root }
-    - { role: common, add_sshkey2: true, user1: app_admin, adnetbios: "TEST007" }
+    #- { role: config, add_user: true, user1: ambari }
+    #- { role: config, miscellaneous: true, user1: ambari, sudoer: true, adgroup: "", adnetbios: "" }
+    #- { role: config, miscellaneous: true, user1: root, sudoer: false, adgroup: "", adnetbios: "" }
+    #- { role: config, miscellaneous: true, user1: app_admin, sudoer: true, adgroup: "app_group", adnetbios: "TEST007" }
+    #- { role: config, add_sshkey: true, user1: ambari }  
+    #- { role: config, add_sshkey: true, user1: root }
+    - { role: config, add_sshkey2: true, user1: app_admin, adnetbios: "TEST007" }
   tags: configure_user
 
 - name: Configure Server master only
@@ -326,7 +326,7 @@
     hadoop1log_path: '/hadoop/1/log/'
     user1: ambari
   roles:
-    - { role: common, disable_tmp_cleanup: true }
+    - { role: config, disable_tmp_cleanup: true }
   tags: 
      - disable_tmp_cleanup
                              
