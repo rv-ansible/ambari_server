@@ -1,5 +1,5 @@
 ---
-postgres_version: 9.6
+postgres_version: 9.2
 postgres_repo_name: "pgdg{{ postgres_version | replace('.','') }}"
 postgres_repo_url: "https://download.postgresql.org/pub/repos/yum/{{ postgres_version }}/redhat/rhel-$releasever-$basearch"
 postgres_repo_key: "https://download.postgresql.org/pub/repos/yum/RPM-GPG-KEY-PGDG-{{ postgres_version | replace('.','') }}"

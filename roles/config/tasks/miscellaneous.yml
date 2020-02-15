@@ -16,6 +16,15 @@
 - name: Set user to umask AD
   shell: "sudo su - '{{adnetbios}}\\{{user1}}' -c 'cat ~/.bashrc|grep -q umask && echo WARNING-UMASK-EXIST-ALREADY||echo umask {{u_mask}} >> ~/.bashrc'" 
   when: adgroup|trim != ""
+  
+- name: Copy ambarisudo
+  copy:
+    src: ambarisudo
+    dest: /etc/sudoers.d/ambarisudo
+    mode: 0600
+    force: yes   
+  become: true  
+  when: user1=='ambari'    
     
 - name: Allow {{user1}} to sudoers
   lineinfile:
@@ -25,7 +34,7 @@
     line:         '{{user1}} ALL=(ALL) NOPASSWD: ALL'
     validate:     'visudo -cf %s'     
   when: sudoer|default(False)==True
-  when: adgroup|trim == ""    
+  when: adgroup|trim == "" and user1!='ambari'    
     
 - name: Allow {{adgroup}} to sudoers
   lineinfile:
