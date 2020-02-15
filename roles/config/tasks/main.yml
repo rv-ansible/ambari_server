@@ -38,3 +38,7 @@
 
 - include_tasks: disable_tmp_cleanup.yml
   when: disable_tmp_cleanup|default(False)==True    
+
+- include_tasks: after_install.yml
+  when: after_install|default(False)==True    
+ 

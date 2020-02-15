@@ -19,8 +19,7 @@
     line: "run_as_user=ambari"
     state: present
   notify: Restart ambari-agent 
-    
-    
+        
 - meta: flush_handlers
 
 - name: Make sure the ambari-agent service is started

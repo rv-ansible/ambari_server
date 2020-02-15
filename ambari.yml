@@ -69,6 +69,10 @@
       - { server0: master1, disk0: sdc, fsname0: '/hadoop/2', vgname0: hadoop2vg, lvname0: hadoop2lv, size0: 5g } # 21.5
       - { server0: master2, disk0: sdb, fsname0: '/hadoop/1', vgname0: hadoop1vg, lvname0: hadoop1lv, size0: 5g } # 21.5
       - { server0: master2, disk0: sdc, fsname0: '/hadoop/2', vgname0: hadoop2vg, lvname0: hadoop2lv, size0: 5g } # 21.5
+      - { server0: kafka, disk0: sdb, fsname0: '/hadoop/1', vgname0: hadoop1vg, lvname0: hadoop1lv, size0: 5g } # 21.5
+      - { server0: kafka, disk0: sdc, fsname0: '/hadoop/2', vgname0: hadoop2vg, lvname0: hadoop2lv, size0: 5g } # 21.5
+      - { server0: spark, disk0: sdb, fsname0: '/hadoop/1', vgname0: hadoop1vg, lvname0: hadoop1lv, size0: 5g } # 21.5
+      - { server0: spark, disk0: sdc, fsname0: '/hadoop/2', vgname0: hadoop2vg, lvname0: hadoop2lv, size0: 5g } # 21.5
   tasks:
     - name: Loop over role
       include_role:
@@ -141,7 +145,7 @@
   tags: resize_disk  
    
 - name: Configure User and set no password for ambari
-  hosts: all
+  hosts: ambari-member # all
   become: true
   any_errors_fatal: True
   vars: 
@@ -154,13 +158,13 @@
           3231
     u_mask: "022"
   roles:
-    - { role: config, add_user: true, user1: ambari }
-    - { role: config, miscellaneous: true, user1: ambari, sudoer: true, adgroup: "", adnetbios: "" }
-    - { role: config, miscellaneous: true, user1: root, sudoer: false, adgroup: "", adnetbios: "" }
-    - { role: config, miscellaneous: true, user1: app_admin, sudoer: true, adgroup: "app_group", adnetbios: "TEST007" }
-    - { role: config, add_sshkey: true, user1: ambari }  
+    #- { role: config, add_user: true, user1: ambari }
+    #- { role: config, miscellaneous: true, user1: ambari, sudoer: true, adgroup: "", adnetbios: "" }
+    #- { role: config, miscellaneous: true, user1: root, sudoer: false, adgroup: "", adnetbios: "" }
+    #- { role: config, miscellaneous: true, user1: app_admin, sudoer: true, adgroup: "app_group", adnetbios: "TEST007" }
+    #- { role: config, add_sshkey: true, user1: ambari }  
     - { role: config, add_sshkey: true, user1: root }
-    - { role: config, add_sshkey2: true, user1: app_admin, adnetbios: "TEST007" }
+    #- { role: config, add_sshkey2: true, user1: app_admin, adnetbios: "TEST007" }
   tags: configure_user
 
 - name: Configure Server master only
@@ -182,7 +186,7 @@
   tags: configure_server
 
 - name: Configure Server All
-  hosts: all
+  hosts: ambari-member
   become: true
   any_errors_fatal: True
   vars:
@@ -193,10 +197,9 @@
     dbname: oracle    
   roles:
     - { role: config, yum: true }
-    - { role: config, selinux: true, reboot: true } # SELINUX NEED REBOOT TO TAKE EFFECT
+    - { role: config, selinux: true, reboot: false } # SELINUX NEED REBOOT TO TAKE EFFECT
   tags: configure_server
-
-  
+ 
 - name: Download ambari yum
   hosts: master # master
   become: true
@@ -223,7 +226,7 @@
   tags: ambari_yum
 
 - name: Copy ambari yum to all
-  hosts: all
+  hosts: ambari-member
   become: true
   any_errors_fatal: True  
   vars:
@@ -283,7 +286,7 @@
      - ambari_agent
      
 - name: Run ambari-agent
-  hosts: all
+  hosts: ambari-member
   become: true
   any_errors_fatal: True
   roles:
@@ -304,6 +307,37 @@
     - { role: ambari, ojdbc: true, artifacts_dest: '/usr/share/java/', owner_folder: root, group_folder: root, owner_file: root, group_file: root }
   tags: 
      - download_jdbc
+
+- name: after install -copy ambarisudo
+  hosts: ambari-member # ???
+  become: true
+  any_errors_fatal: True
+  roles:
+    - { role: config, after_install: true }
+  tags: 
+     - after_install
+
+- name: Disable tmp cleanup
+  hosts: ambari-member
+  become: true
+  #any_errors_fatal: True
+  vars:
+    tmp_file_path: '/etc/tmpfiles.d/'
+    hadoop1log_path: '/hadoop/1/log/'
+    user1: ambari
+  roles:
+    - { role: config, disable_tmp_cleanup: true }
+  tags: 
+     - disable_tmp_cleanup
+
+- name: Apply the database role to the ambari-server group
+  hosts: sql
+  any_errors_fatal: true
+  become: yes
+  roles:
+    - role: database
+      #when: database != "embedded" and not database_options.external_hostname|default('')
+  tags: database                             
             
 - name: Run ambari-server
   hosts: master
@@ -315,26 +349,4 @@
     - { role: ambari, ambari_server_run: true }
   tags: 
      - ambari_server_run                        
-
-     
-- name: Disable tmp cleanup
-  hosts: all
-  become: true
-  #any_errors_fatal: True
-  vars:
-    tmp_file_path: '/etc/tmpfiles.d/'
-    hadoop1log_path: '/hadoop/1/log/'
-    user1: ambari
-  roles:
-    - { role: config, disable_tmp_cleanup: true }
-  tags: 
-     - disable_tmp_cleanup
-                                                          
-- name: Apply the database role to the ambari-server group
-  hosts: sql
-  any_errors_fatal: true
-  become: yes
-  roles:
-    - role: database
-      #when: database != "embedded" and not database_options.external_hostname|default('')
-  tags: database                             
+                                                            

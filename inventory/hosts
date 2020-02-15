@@ -8,5 +8,17 @@ master2 ansible_host=192.168.3.129
 kafka ansible_host=192.168.3.130
 spark ansible_host=192.168.3.131
 
+[client2:children]
+master-member
+client
+
+[ambari-member:children]  # all
+master
+client2
+
+[master-member2:children]
+master
+master-member
+
 [sql]
 db ansible_host=192.168.3.134

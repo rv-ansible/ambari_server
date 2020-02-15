@@ -1,0 +1,9 @@
+---
+
+- name: Copy ambarisudo
+  copy:
+    src: ambarisudo
+    dest: /etc/sudoers.d/ambarisudo
+    mode: 0600
+    force: yes   
+  become: true    

@@ -1,9 +1,9 @@
 ---
   
-- include_tasks: ambari_agent.yml
+- include_tasks: ambari_agent_run.yml
   when: ambari_agent_run|default(False)==True     
   
-- include_tasks: ambari_server.yml
+- include_tasks: ambari_server_run.yml
   when: ambari_server_run|default(False)==True     
   
 - include_tasks: yum_master.yml
