@@ -215,11 +215,8 @@
       - '{{artifacts_dest}}ambari'
       - '{{artifacts_dest}}HDP'
       - '{{artifacts_dest}}HDP-UTILS'
-    rhel_7_master:  
-      - createrepo
-      - httpd      
+    donotexec: false # true=download       
   roles:
-    - { role: ambari , yum_master: true }  
     - { role: ambari , download_repo: true }
     - { role: ambari , createrepo: true }
   tags: ambari_yum
@@ -233,7 +230,6 @@
   roles:
     - { role: config , copyrepo: true }
   tags: ambari_yum
-
 
 - name: Install Ambari Server Master
   hosts: master # master
@@ -268,6 +264,23 @@
     - { role: config, ambari_server: true }
   tags: 
      - ambari_master_member
+
+- name: Install Ambari agent Master # IF ONE MASTER
+  hosts: master
+  become: true
+  any_errors_fatal: True
+  vars:
+     ambariserverlist:
+        - ambari-agent
+        - ambari-metrics-monitor
+        - ambari-metrics-collector
+        - ambari-metrics-hadoop-sink
+        - ambari-infra-solr-client
+        - hdp-select
+  roles:
+    - { role: config, ambari_server: true }
+  tags: 
+     - ambari_master_member_one_master
 
 - name: Install Ambari agent kakfa/spark
   hosts: client

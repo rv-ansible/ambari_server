@@ -1,8 +1,0 @@
----
-
-- name: install Binaries for RHEL 7 master only
-  yum: name={{ item }} state=present
-  with_items: 
-    - "{{rhel_7_master}}"
-  
-  
