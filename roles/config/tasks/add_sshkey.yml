@@ -12,17 +12,18 @@
   become_user: '{{user1}}'
 
 - name: Create .ssh folder if not exist
-  shell: "sudo su - '{{user1}}' -c '[ -d $PWD/.ssh ] && echo WARNING-FOLDER-ALREADY-EXIST||mkdir -p $PWD/.ssh'" 
+  shell: "sudo su - '{{user1}}' -c '[ -d $PWD/.ssh ] && echo WARNING-FOLDER-ALREADY-EXIST||mkdir -p $PWD/.ssh && chmod 0700 ~/.ssh'" 
 
 - name: Generate ssh key of {{user1}} on {{groups['master'][0]}}
   shell: sudo su - {{user1}} -c '[ ! -f  ~/.ssh/id_rsa ] && ssh-keygen -t rsa -f ~/.ssh/id_rsa -q -P "" || mkdir -p ~/.ssh && chmod 0700 ~/.ssh'
   when: inventory_hostname in groups['master']
 
-- name: Generate ssh key of {{user1}} on {{groups['master-member'][0]}}
+- name: Generate ssh key of {{user1}} on {{groups['master-member']}}
   shell: sudo su - {{user1}} -c '[ ! -f  ~/.ssh/id_rsa ] && ssh-keygen -t rsa -f ~/.ssh/id_rsa -q -P "" || mkdir -p ~/.ssh && chmod 0700 ~/.ssh'
   when: inventory_hostname in groups['master-member']
   ignore_errors: true
   
+# configure master  
 - name: Fetch master public key to ansible 
   fetch: 
     src: ~/.ssh/id_rsa.pub
@@ -42,7 +43,8 @@
 - name: Append master public key to authorized_keys ALL 2
   shell: "grep -q {{hostvars[groups['master'][0]].inventory_hostname}} ~/.ssh/authorized_keys && echo ALREADY_ON_THE_AUTHORIZED_KEYS || cat ~/authorized_keys.master >> ~/.ssh/authorized_keys" 
   become_user: '{{user1}}'
-  
+
+# configure master-member0 if exist
 - name: Fetch master-member0 public key to ansible 
   fetch: 
     src: ~/.ssh/id_rsa.pub
@@ -65,7 +67,8 @@
   shell: "grep -q {{hostvars[groups['master-member'][0]].inventory_hostname}} ~/.ssh/authorized_keys && echo ALREADY_ON_THE_AUTHORIZED_KEYS || cat ~/authorized_keys.master-member0 >> ~/.ssh/authorized_keys" 
   become_user: '{{user1}}'
   ignore_errors: true
-  
+
+# configure master-member1 if exist  
 - name: Fetch master-member1 public key to ansible 
   fetch: 
     src: ~/.ssh/id_rsa.pub

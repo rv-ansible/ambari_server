@@ -158,12 +158,12 @@
           3231
     u_mask: "022"
   roles:
-    #- { role: config, add_user: true, user1: ambari }
-    #- { role: config, miscellaneous: true, user1: ambari, sudoer: true, adgroup: "", adnetbios: "" }
-    #- { role: config, miscellaneous: true, user1: root, sudoer: false, adgroup: "", adnetbios: "" }
-    #- { role: config, miscellaneous: true, user1: app_admin, sudoer: true, adgroup: "app_group", adnetbios: "TEST007" }
+    - { role: config, add_user: true, user1: ambari }
+    - { role: config, miscellaneous: true, user1: ambari, sudoer: true, adgroup: "", adnetbios: "" }
+    - { role: config, miscellaneous: true, user1: root, sudoer: false, adgroup: "", adnetbios: "" }
+    - { role: config, miscellaneous: true, user1: app_admin, sudoer: true, adgroup: "app_group", adnetbios: "TEST007" }
     - { role: config, add_sshkey: true, user1: ambari }  
-    #- { role: config, add_sshkey: true, user1: root }
+    - { role: config, add_sshkey: true, user1: root }
     #- { role: config, add_sshkey2: true, user1: app_admin, adnetbios: "TEST007" }
   tags: configure_user
 
@@ -174,7 +174,6 @@
   vars:
     Package_name: jdk-8u181-linux-x64.tar.gz
     install_dir: /usr/java
-    #dbname: oracle
     oracle_jdk_var_lib:  /var/lib/ambari-server/ojdbc8.jar
     oracle_jdk_usr_share:  /usr/share/java/ojdbc8.jar
     rhel_7:
