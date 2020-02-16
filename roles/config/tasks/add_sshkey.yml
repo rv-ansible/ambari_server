@@ -5,6 +5,11 @@
   ignore_errors: true 
   delegate_to: localhost
   run_once: true
+  
+- name: Delete authorized_keys*
+  shell: rm -f ~/authorized_keys.master ~/authorized_keys.master-member0 ~/authorized_keys.master-member1
+  ignore_errors: true  
+  become_user: '{{user1}}'
 
 - name: Create .ssh folder if not exist
   shell: "sudo su - '{{user1}}' -c '[ -d $PWD/.ssh ] && echo WARNING-FOLDER-ALREADY-EXIST||mkdir -p $PWD/.ssh'" 
@@ -13,9 +18,10 @@
   shell: sudo su - {{user1}} -c '[ ! -f  ~/.ssh/id_rsa ] && ssh-keygen -t rsa -f ~/.ssh/id_rsa -q -P "" || mkdir -p ~/.ssh && chmod 0700 ~/.ssh'
   when: inventory_hostname in groups['master']
 
-- name: Generate ssh key of {{user1}} on {{groups['master'][0]}}
+- name: Generate ssh key of {{user1}} on {{groups['master-member'][0]}}
   shell: sudo su - {{user1}} -c '[ ! -f  ~/.ssh/id_rsa ] && ssh-keygen -t rsa -f ~/.ssh/id_rsa -q -P "" || mkdir -p ~/.ssh && chmod 0700 ~/.ssh'
   when: inventory_hostname in groups['master-member']
+  ignore_errors: true
   
 - name: Fetch master public key to ansible 
   fetch: 
@@ -24,15 +30,7 @@
     flat: yes
   become_user: '{{user1}}'    
   when: inventory_hostname in groups['master']
-  
-- name: Fetch master private key to ansible 
-  fetch: 
-    src: ~/.ssh/id_rsa
-    dest: ./id_rsa.master
-    flat: yes
-  become_user: '{{user1}}'    
-  when: inventory_hostname in groups['master']
-       
+         
 - name: Copy master public key to authorized_keys ALL 1
   copy:
     src: ./id_rsa.pub.master
@@ -40,13 +38,56 @@
     mode: 0600 
     force: no   
   become_user: '{{user1}}'
-
+  
 - name: Append master public key to authorized_keys ALL 2
-  shell: "grep -q master1 ~/.ssh/authorized_keys && echo ALREADY_ON_THE_AUTHORIZED_KEYS || cat ~/authorized_keys.master >> ~/.ssh/authorized_keys" 
+  shell: "grep -q {{hostvars[groups['master'][0]].inventory_hostname}} ~/.ssh/authorized_keys && echo ALREADY_ON_THE_AUTHORIZED_KEYS || cat ~/authorized_keys.master >> ~/.ssh/authorized_keys" 
   become_user: '{{user1}}'
-
-- meta: end_play ################# 
+  
+- name: Fetch master-member0 public key to ansible 
+  fetch: 
+    src: ~/.ssh/id_rsa.pub
+    dest: ./id_rsa.pub.master-member0
+    flat: yes
+  become_user: '{{user1}}'    
+  when: inventory_hostname in groups['master-member'][0]
+  ignore_errors: true
        
+- name: Copy master-member0 public key to authorized_keys ALL 1
+  copy:
+    src: ./id_rsa.pub.master-member0
+    dest: ~/authorized_keys.master-member0
+    mode: 0600 
+    force: no   
+  become_user: '{{user1}}'
+  ignore_errors: true
+  
+- name: Append master public key to authorized_keys ALL 2
+  shell: "grep -q {{hostvars[groups['master-member'][0]].inventory_hostname}} ~/.ssh/authorized_keys && echo ALREADY_ON_THE_AUTHORIZED_KEYS || cat ~/authorized_keys.master-member0 >> ~/.ssh/authorized_keys" 
+  become_user: '{{user1}}'
+  ignore_errors: true
+  
+- name: Fetch master-member1 public key to ansible 
+  fetch: 
+    src: ~/.ssh/id_rsa.pub
+    dest: ./id_rsa.pub.master-member1
+    flat: yes
+  become_user: '{{user1}}'    
+  when: inventory_hostname in groups['master-member'][1]
+  ignore_errors: true
+       
+- name: Copy master-member0 public key to authorized_keys ALL 1
+  copy:
+    src: ./id_rsa.pub.master-member1
+    dest: ~/authorized_keys.master-member1
+    mode: 0600 
+    force: no   
+  become_user: '{{user1}}'
+  ignore_errors: true
+  
+- name: Append master public key to authorized_keys ALL 2
+  shell: "grep -q {{hostvars[groups['master-member'][1]].inventory_hostname}} ~/.ssh/authorized_keys && echo ALREADY_ON_THE_AUTHORIZED_KEYS || cat ~/authorized_keys.master-member1 >> ~/.ssh/authorized_keys" 
+  become_user: '{{user1}}'
+  ignore_errors: true
 
 - name: Copy config to all
   copy:
@@ -62,18 +103,8 @@
   delegate_to: localhost
   run_once: true
   
-
-#- block:    
-#    - name: Copy sshkeys of {{groups['master']}} to {{ groups['master-member'][0] }}
-#      shell: "scp -o ConnectTimeout=5 -o BatchMode=yes ~/.ssh/id_rsa* {{groups['master-member'][0]}}:~/.ssh"
-#      become_user: '{{user1}}'    
-#      when: inventory_hostname in groups['master']  
-#      ignore_errors: true
-#        
-#    - name: Copy sshkeys of {{groups['master']}} to {{ groups['master-member'][1] }}
-#      shell: "scp -o ConnectTimeout=5 -o BatchMode=yes ~/.ssh/id_rsa* {{groups['master-member'][1]}}:~/.ssh"
-#      become_user: '{{user1}}'    
-#      when: inventory_hostname in groups['master']    
-#      ignore_errors: true
-#  when: user1 != 'root'
-    
+- name: Delete authorized_keys*
+  shell: rm -f ~/authorized_keys.master ~/authorized_keys.master-member0 ~/authorized_keys.master-member1
+  ignore_errors: true  
+  become_user: '{{user1}}'
+  

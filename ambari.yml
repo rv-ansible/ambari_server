@@ -162,8 +162,8 @@
     #- { role: config, miscellaneous: true, user1: ambari, sudoer: true, adgroup: "", adnetbios: "" }
     #- { role: config, miscellaneous: true, user1: root, sudoer: false, adgroup: "", adnetbios: "" }
     #- { role: config, miscellaneous: true, user1: app_admin, sudoer: true, adgroup: "app_group", adnetbios: "TEST007" }
-    #- { role: config, add_sshkey: true, user1: ambari }  
-    - { role: config, add_sshkey: true, user1: root }
+    - { role: config, add_sshkey: true, user1: ambari }  
+    #- { role: config, add_sshkey: true, user1: root }
     #- { role: config, add_sshkey2: true, user1: app_admin, adnetbios: "TEST007" }
   tags: configure_user
 
