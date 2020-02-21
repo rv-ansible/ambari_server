@@ -17,7 +17,7 @@
   shell: "sudo su - '{{adnetbios}}\\{{user1}}' -c 'cat ~/.bashrc|grep -q umask && echo WARNING-UMASK-EXIST-ALREADY||echo umask {{u_mask}} >> ~/.bashrc'" 
   when: adgroup|trim != ""  
     
-- name: Allow {{user1}} to sudoers
+- name: Allow user to sudoers
   lineinfile:
     dest:         /etc/sudoers
     state:        present

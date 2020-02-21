@@ -8,8 +8,3 @@
   shell: echo {{passwd1}} | passwd --stdin {{user1}}
   when: x.failed == false
            
-- name: Delete id_rsa.pub on repo
-  shell: rm -f ./id_rsa.pub
-  ignore_errors: true 
-  delegate_to: localhost
-  run_once: true

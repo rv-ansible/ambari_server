@@ -2,160 +2,34 @@
 
 - name: Disable 10 days /tmp cleanup
   lineinfile:
-    path: /usr/lib/tmpfiles.d/tmp.conf
+    path: "{{tmp_default}}"
     regexp: 'v /tmp 1777 root root 10d'
     line: '#v /tmp 1777 root root 10d'
+  become: true
 
 - name: Disable 30 days /var/tmp cleanup
   lineinfile:
-    path: /usr/lib/tmpfiles.d/tmp.conf
+    path: "{{tmp_default}}"
     regexp: 'v /var/tmp 1777 root root 30d'
     line: '#v /var/tmp 1777 root root 30d'
-    
-- name: Create tgt_tmpfiles.conf
-  shell: "echo 'x /tmp/krb5cc*' >> tgt_tmpfiles.conf"
-  args:
-    chdir: "{{tmp_file_path}}"
-    
-- name: Make sure this exist {{hadoop1log_path}} 
+
+- name: Touch tgt_tmpfiles.conf
   file:
-    path: "{{hadoop1log_path}}"
-    state: directory
-    mode: '0755'
+    path:  "{{tmp_file_path}}tgt_tmpfiles.conf"
+    state: touch        
+        
+- name: Create tgt_tmpfiles.conf
+  lineinfile:
+    path: "{{tmp_file_path}}tgt_tmpfiles.conf"
+    regexp: 'x /tmp/krb5cc*'
+    line: 'x /tmp/krb5cc*'    
     
-- name: Check folder
-  stat:
-    path: '{{hadoop1log_path}}ambari-agent'
-  register: w
-
-- fail:
-    msg: "ERROR: {{hadoop1log_path}}ambari-agent ALREADY EXIST ######################"
-  when: w.stat.exists and w.stat.isdir   
-  
-- name: Make sure the ambari-agent service is stop
-  service:
-    name: ambari-agent
-    state: stopped
-  register: p
-    
-- name: the ambari-agent start failed!!!
-  fail:
-    msg: "ERROR: the ambari-agent start failed!!!  ######################"
-  when: p is failed      
-
-#- name: Make sure the ambari-server service is stop
-#  service:
-#    name: ambari-server
-#    state: stopped
-#  register: q
-#
-#- name: the ambari-server stop failed!!!
-#  fail:
-#    msg: "ERROR: the ambari-server stop failed!!!  ######################"
-#  when: q is failed  
-       
-- block:               
-    - name: Copy ambari logs
-      shell: |
-             mv /var/log/ambari-agent/ {{hadoop1log_path}}
-             mv /var/log/ambari-server/ {{hadoop1log_path}}
-      register: x
-      
-    - name: fail the play 1
-      fail:
-        msg: "ERROR: copying /var/log/ambari-(server/agent) failed ######################"
-      when: x is failed  
-      
-    - name: create server link
-      shell: |
-             ln -s {{hadoop1log_path}}ambari-agent /var/log/ambari-agent
-             ln -s {{hadoop1log_path}}ambari-server /var/log/ambari-server  
-      register: z
-    
-    - name: Success link
-      debug:
-        msg: "SUCCESS: link on {{hadoop1log_path}}(ambari-server/agent) to /hadoop/1/log ######################"
-      when: z is not failed  
-    
-    - name: the link failed
-      fail:
-        msg: "ERROR: creating link on  {{hadoop1log_path}}(ambari-server/agent) to /hadoop/1/log  ######################"
-      when: z is failed  
-  when: inventory_hostname in groups['master']  
-  
-- block:               
-    - name: Copy ambari logs
-      shell: |
-             mv /var/log/ambari-agent/ {{hadoop1log_path}}
-      register: x
-      
-    - name: fail the play 1
-      fail:
-        msg: "ERROR: copying /var/log/ambari-agent failed ######################"
-      when: x is failed  
-      
-    - name: create server link
-      shell: |
-             ln -s {{hadoop1log_path}}ambari-agent /var/log/ambari-agent
-      register: z
-    
-    - name: Success link
-      debug:
-        msg: "SUCCESS: link on {{hadoop1log_path}}agent to /hadoop/1/log ######################"
-      when: z is not failed  
-    
-    - name: the link failed
-      fail:
-        msg: "ERROR: creating link on  {{hadoop1log_path}}ambari-agent to /hadoop/1/log  ######################"
-      when: z is failed  
-  when: inventory_hostname in groups['master-member'] 
-  
-- block:               
-    - name: Copy ambari logs
-      shell: |
-             mv /var/log/ambari-agent/ {{hadoop1log_path}}
-      register: x
-      
-    - name: fail the play 1
-      fail:
-        msg: "ERROR: copying /var/log/ambari-agent failed ######################"
-      when: x is failed  
-      
-    - name: create server link
-      shell: |
-             ln -s {{hadoop1log_path}}ambari-agent /var/log/ambari-agent
-      register: z
-    
-    - name: Success link
-      debug:
-        msg: "SUCCESS: link on {{hadoop1log_path}}agent to /hadoop/1/log ######################"
-      when: z is not failed  
-    
-    - name: the link failed
-      fail:
-        msg: "ERROR: creating link on {{hadoop1log_path}}ambari-agent to /hadoop/1/log  ######################"
-      when: z is failed  
-  when: inventory_hostname in groups['client'] 
-
-#- name: Make sure the ambari-server service is started
-#  service:
-#    name: ambari-server
-#    state: restarted
-#  register: r
-#  
-#- name: the ambari-server start failed!!!
-#  fail:
-#    msg: "ERROR: the ambari-server start failed!!!  ######################"
-#  when: r is failed  
+- name: reload systemd
+  systemd:
+    daemon_reload: yes
  
-- name: Make sure the ambari-agent service is started
-  service:
-    name: ambari-agent
-    state: restarted
-  register: s
-
-- name: the ambari-agent start failed!!!
-  fail:
-    msg: "ERROR: the ambari-agent start failed!!!  ######################"
-  when: s is failed  
-    
+- name: Set global umask
+  lineinfile:
+    path: /etc/profile
+    regexp: '^umask'
+    line: 'umask {{u_mask}} '   

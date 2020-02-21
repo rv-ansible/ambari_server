@@ -1,149 +1,5 @@
 ---
 
-- name: Get disk info and mail it 
-  hosts: all 
-  become: true
-  any_errors_fatal: True
-  vars:
-    log_file:
-    log_file_tower:
-    path_log:
-    tmp_folder: /tmp/ambari_tmp                   
-    send_mail: false
-    partition: 1
-    raw_prefix: ""  # ie sd or mpath
-    filename1: email
-    ext: txt
-    include_mpath: false
-    letters:
-      - b
-      - c
-      - d
-      - e
-  roles: 
-    - { role: mail_logs, create_log: true, lines: true } 
-    - { role: disk, get_raw_disk_prefix: true, become: true, include_mpath: false }
-    - { role: disk, get_raw_disk: true, become: true }
-    - { role: mail_logs, mail: true } 
-    #- { role: config, add_email: true }  
-  tags: get_raw_disk    
-  
-- name: Create inventory
-  hosts: all 
-  vars:
-    log_file:
-    log_file_tower:
-    path_log:
-    tmp_folder: /tmp/ambari_tmp                   
-    send_mail: false
-    partition: 1
-    fs_name: hadoop
-    #disk_size_2check: 10
-    raw_prefix: ""  # ie sd or mpath
-    filename1: email
-    ext: txt
-    include_mpath: false
-    letters:
-      - b
-      - c
-      - d
-      - e    
-    skip_disks:   # extra-vars or survey ex server1sdb or edit the extra-vars ex - serversde
-  roles: 
-    - { role: mail_logs, create_log: true, lines: false }   
-    - { role: disk, get_raw_disk_prefix: true, become: true, include_mpath: false }
-    - { role: disk, create_inventory: true, become: true, fs_name: hadoop }
-    - { role: mail_logs, mail: true, send_mail: false } 
-  tags: create_inventory    
-    
-- name: Create partition   
-  hosts: all
-  become: true
-  any_errors_fatal: True
-  vars:
-    partition: 1
-    include_mpath: false
-    skip_disks:   # extra-vars or survey ex server1sdb or edit the extra-vars ex - serversde
-    disk_items:
-      - { server0: master1, disk0: sdb, fsname0: '/hadoop/1', vgname0: hadoop1vg, lvname0: hadoop1lv, size0: 5g } # 21.5
-      - { server0: master1, disk0: sdc, fsname0: '/hadoop/2', vgname0: hadoop2vg, lvname0: hadoop2lv, size0: 5g } # 21.5
-      - { server0: master2, disk0: sdb, fsname0: '/hadoop/1', vgname0: hadoop1vg, lvname0: hadoop1lv, size0: 5g } # 21.5
-      - { server0: master2, disk0: sdc, fsname0: '/hadoop/2', vgname0: hadoop2vg, lvname0: hadoop2lv, size0: 5g } # 21.5
-      - { server0: kafka, disk0: sdb, fsname0: '/hadoop/1', vgname0: hadoop1vg, lvname0: hadoop1lv, size0: 5g } # 21.5
-      - { server0: kafka, disk0: sdc, fsname0: '/hadoop/2', vgname0: hadoop2vg, lvname0: hadoop2lv, size0: 5g } # 21.5
-      - { server0: spark, disk0: sdb, fsname0: '/hadoop/1', vgname0: hadoop1vg, lvname0: hadoop1lv, size0: 5g } # 21.5
-      - { server0: spark, disk0: sdc, fsname0: '/hadoop/2', vgname0: hadoop2vg, lvname0: hadoop2lv, size0: 5g } # 21.5
-  tasks:
-    - name: Loop over role
-      include_role:
-       name: disk
-      vars:
-        disk_process: DPVLFM   # D=create raw disk P=physical volume V=volumegroup L=logicalvolume F=filesystem M=mount
-        create_partition_nolog: true
-        server: "{{ item.server0 }}"
-        disk1:  "{{ item.disk0 }}"
-        pvname: "{{ item.disk0 }}"
-        fsname: "{{ item.fsname0 }}"
-        vgname: "{{ item.vgname0 }}"
-        lvname: "{{ item.lvname0 }}"
-        size: "{{ item.size0 }}"
-      with_items: 
-         - "{{disk_items}}"
-  tags: create_partition
-
-- name: Remove partition   
-  hosts: all
-  become: true
-  any_errors_fatal: True
-  vars:
-    partition: 1
-    include_mpath: false
-    disk_items:
-      - { server0: spark, disk0: sdb, fsname0: '/hadoop/1', vgname0: hadoop1vg, lvname0: hadoop1lv, size0: +100%FREE } # 21.5
-      - { server0: spark, disk0: sdc, fsname0: '/hadoop/2', vgname0: hadoop2vg, lvname0: hadoop2lv, size0: +100%FREE } # 21.5
-  tasks:
-    - name: Loop over role
-      include_role:
-       name: disk
-      vars:
-        disk_process: DPVLFM
-        force: yes
-        remove_partition_nolog: true
-        server: "{{ item.server0 }}"
-        disk1:  "{{ item.disk0 }}"
-        pvname: "{{ item.disk0 }}"
-        fsname: "{{ item.fsname0 }}"
-        vgname: "{{ item.vgname0 }}"
-        lvname: "{{ item.lvname0 }}" # size is not needed
-      with_items: 
-         - "{{disk_items}}"
-  tags: remove_partition
-  
-- name: Resize Disk (logical)  
-  hosts: all
-  become: true
-  any_errors_fatal: True
-  vars:
-    disk_items:
-      - { server0: master1, disk0: sdb, fsname0: '/hadoop/1', vgname0: hadoop1vg, lvname0: hadoop1lv, size0: 10g }
-      - { server0: master1, disk0: sdc, fsname0: '/hadoop/2', vgname0: hadoop2vg, lvname0: hadoop2lv, size0: 10g }
-  tasks:
-    - name: Loop over role
-      include_role:
-       name: disk
-      vars:
-        resize_logical: true
-        server: "{{ item.server0 }}"
-        disk1:  "{{ item.disk0 }}"
-        pvname: "{{ item.disk0 }}"
-        fsname: "{{ item.fsname0 }}"
-        vgname: "{{ item.vgname0 }}"
-        lvname: "{{ item.lvname0 }}"
-        size: "{{ item.size0 }}"
-      with_items: 
-         - "{{disk_items}}"
-  tags: resize_disk  
-   
 - name: Configure User and set no password for ambari
   hosts: ambari-member # all
   become: true
@@ -158,11 +14,11 @@
           3231
     u_mask: "022"
   roles:
-    - { role: config, add_user: true, user1: ambari }
-    - { role: config, miscellaneous: true, user1: ambari, sudoer: true, adgroup: "", adnetbios: "" }
-    - { role: config, miscellaneous: true, user1: root, sudoer: false, adgroup: "", adnetbios: "" }
-    - { role: config, miscellaneous: true, user1: app_admin, sudoer: true, adgroup: "app_group", adnetbios: "TEST007" }
-    - { role: config, add_sshkey: true, user1: ambari }  
+    #- { role: config, add_user: true, user1: ambari }
+    #- { role: config, miscellaneous: true, user1: ambari, sudoer: true, adgroup: "", adnetbios: "" }
+    #- { role: config, miscellaneous: true, user1: root, sudoer: false, adgroup: "", adnetbios: "" }
+    #- { role: config, miscellaneous: true, user1: app_admin, sudoer: true, adgroup: "app_group", adnetbios: "TEST007" }
+    #- { role: config, add_sshkey: true, user1: ambari }  
     - { role: config, add_sshkey: true, user1: root }
     #- { role: config, add_sshkey2: true, user1: app_admin, adnetbios: "TEST007" }
   tags: configure_user
@@ -319,29 +175,7 @@
     - { role: ambari, ojdbc: true, artifacts_dest: '/usr/share/java/', owner_folder: root, group_folder: root, owner_file: root, group_file: root }
   tags: 
      - download_jdbc
-
-- name: after install -copy ambarisudo
-  hosts: ambari-member # ???
-  become: true
-  any_errors_fatal: True
-  roles:
-    - { role: config, after_install: true }
-  tags: 
-     - after_install
-
-- name: Disable tmp cleanup
-  hosts: ambari-member
-  become: true
-  #any_errors_fatal: True
-  vars:
-    tmp_file_path: '/etc/tmpfiles.d/'
-    hadoop1log_path: '/hadoop/1/log/'
-    user1: ambari
-  roles:
-    - { role: config, disable_tmp_cleanup: true }
-  tags: 
-     - disable_tmp_cleanup
-
+     
 - name: Apply the database role to the ambari-server group
   hosts: sql
   any_errors_fatal: true
@@ -349,8 +183,31 @@
   roles:
     - role: database
       #when: database != "embedded" and not database_options.external_hostname|default('')
-  tags: database                             
-            
+  tags: database  
+  
+# master1: ambari-server setup --jdbc-db=postgres --jdbc-driver=/root/postgresql.jar  # not needed here
+
+# db: 
+# sudo -u postgres psql 
+    # CREATE DATABASE ambari;
+    # CREATE USER ambari WITH PASSWORD 'ambari';
+    # GRANT ALL PRIVILEGES ON DATABASE ambari TO ambari;
+# /var/lib/pgsql/9.2/data/pg_hba.conf     
+    # # IPv4 local connections:
+    # host    all             all             127.0.0.1/32            ident
+    # host    all             all             192.168.3.128/24        md5
+# service postgresql-9.2 restart
+        
+  
+- name: Apply the ambari-server role to the ambari-server group
+  hosts: master
+  any_errors_fatal: true
+  become: yes
+  roles:
+    - ambari-server
+  tags: 
+     - ambari-server                        
+                             
 - name: Run ambari-server
   hosts: master
   become: true
@@ -361,4 +218,31 @@
     - { role: ambari, ambari_server_run: true }
   tags: 
      - ambari_server_run                        
+
+- name: Disable tmp cleanup
+  hosts: ambari-member
+  become: true
+  any_errors_fatal: True
+  vars:
+    tmp_default: '/usr/lib/tmpfiles.d/tmp.conf'
+    tmp_file_path: '/etc/tmpfiles.d/'
+    hadoop1log_path: '/hadoop/1/log/'
+    user1: ambari
+    u_mask: "022" 
+    run_master_server: true # false for testing
+    run_master_member: true # false for dev  
+  roles:
+    - { role: config, disable_tmp_cleanup: true }
+    #- { role: config, move_log: true }
+  tags: 
+     - disable_tmp_cleanup
+                                                            
+- name: after install -copy ambarisudo
+  hosts: ambari-member 
+  become: true
+  any_errors_fatal: True
+  roles:
+    - { role: config, after_install: true }
+  tags: 
+     - after_install
                                                             

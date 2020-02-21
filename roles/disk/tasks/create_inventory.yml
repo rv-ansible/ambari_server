@@ -43,11 +43,20 @@
   with_items: "{{skip_disks}}" 
   when: skip_disks[0] is defined  
 
-- name: Save to temp (skip if server is on the list)
+- name: Save to temp (skip if server is on the list) multiple partition
   shell: |
-         if [ {{inventory_hostname.split(".")[0]|lower}}{{raw_prefix}}{{letters[item|int]}} == `grep {{inventory_hostname.split(".")[0]|lower}}{{raw_prefix}}{{letters[item|int]}} temp47_010.log` ]; then true; else echo "  - { server0: {{inventory_hostname.split(".")[0]|lower}}, disk0: {{raw_prefix}}{{letters[item|int]}}, fsname0: '/{{fs_name}}/ ', vgname0: {{fs_name}} vg, lvname0: {{fs_name}} lv, size0: +100%FREE } # {{x.results[item|int].stdout}} {{y.results[item|int].stdout | replace(',','')}}" 1>> temp47_009.log; fi
+         if [ {{inventory_hostname.split(".")[0]|lower}}{{raw_prefix}}{{letters[item|int]}} == `grep {{inventory_hostname.split(".")[0]|lower}}{{raw_prefix}}{{letters[item|int]}} temp47_010.log` ]; then true; else echo "  - { server0: {{inventory_hostname.split(".")[0]|lower}}, disk0: {{raw_prefix}}{{letters[item|int]}}, fsname0: '{{fs_name}}/ ', vgname0: {{logical_name}} vg, lvname0: {{logical_name}} lv, size0: +100%FREE } # {{x.results[item|int].stdout}} {{y.results[item|int].stdout | replace(',','')}}" 1>> temp47_009.log; fi
   when: x.results[item|int].stdout|int>=1 and x.results[item|int].stdout is defined
   with_sequence: start=0 count={{letters|length}}
+  when: multiple_disk==true   
+
+- name: Save to temp (skip if server is on the list) single partition
+  shell: |
+         if [ {{inventory_hostname.split(".")[0]|lower}}{{raw_prefix}}{{letters[item|int]}} == `grep {{inventory_hostname.split(".")[0]|lower}}{{raw_prefix}}{{letters[item|int]}} temp47_010.log` ]; then true; else echo "  - { server0: {{inventory_hostname.split(".")[0]|lower}}, disk0: {{raw_prefix}}{{letters[item|int]}}, fsname0: '{{fs_name}}/', vgname0: {{logical_name}}vg, lvname0: {{logical_name}}lv, size0: +100%FREE } # {{x.results[item|int].stdout}} {{y.results[item|int].stdout | replace(',','')}}" 1>> temp47_009.log; fi
+  when: x.results[item|int].stdout|int>=1 and x.results[item|int].stdout is defined
+  with_sequence: start=0 count={{letters|length}}
+  when: multiple_disk==false  
+
    
 - name: Remove blank line
   shell: "sed -i '/^$/d' temp47_009.log || true"  
@@ -59,7 +68,15 @@
          echo disk_items: >> {{path_log}}
   run_once: true       
          
-- name: Add the variables array content
+- name: Add the variables array content multiple partition
   shell: |
          awk 'NR=={{item}} { print "  "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8"{{item}}"$9" "$10" "$11"{{item}}"$12" "$13" "$14"{{item}}"$15" "$16" "$17" "$18" "$19" "$20 }' temp47_009.log 1>> {{path_log}} || true
-  with_sequence: count={{letters|length}}
+  with_sequence: start=1 end={{count_disk|int}}
+  when: multiple_disk==true
+
+- name: Add the variables array content single partition
+  shell: |
+         awk 'NR=={{item}} { print "  "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9" "$10" "$11" "$12" "$13" "$14" "$15" "$16" "$17" "$18" "$19" "$20 }' temp47_009.log 1>> {{path_log}} || true
+  with_sequence: start=1 end={{count_disk|int}}
+  when: multiple_disk==false
+  

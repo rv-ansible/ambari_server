@@ -1,5 +1,29 @@
 ---
 
+- name: Allow ambari default to sudoers
+  lineinfile:
+    dest:         /etc/sudoers
+    state:        present
+    regexp:       '^Defaults exempt_group = ambari'
+    line:         'Defaults exempt_group = ambari'
+    validate:     'visudo -cf %s'     
+
+- name: Allow ambari default to sudoers
+  lineinfile:
+    dest:         /etc/sudoers
+    state:        present
+    regexp:       '^Defaults !env_reset,env_delete-=PATH'
+    line:         'Defaults !env_reset,env_delete-=PATH'
+    validate:     'visudo -cf %s'     
+
+- name: Allow ambari default to sudoers
+  lineinfile:
+    dest:         /etc/sudoers
+    state:        present
+    regexp:       '^Defaults: ambari !requiretty'
+    line:         'Defaults: ambari !requiretty'
+    validate:     'visudo -cf %s'     
+
 - name: Copy ambarisudo
   copy:
     src: ambarisudo

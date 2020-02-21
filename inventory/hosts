@@ -20,5 +20,5 @@ client2
 master
 master-member
 
-[sql]
-db ansible_host=192.168.3.134
+#[sql]
+#db ansible_host=192.168.3.134

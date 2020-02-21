@@ -1,0 +1,30 @@
+---
+
+- name: Get version console header
+  shell: |
+         echo 'VG LV NAME REPORT' >> {{path_log}}
+         echo >> {{path_log}}
+  run_once: true
+
+
+- name: vgs
+  shell: 'vgs > {{tmp_folder}}/vgs && chmod 0755 {{tmp_folder}}/vgs'
+  become: true
+    
+- name: save vgs
+  shell: |
+         echo >> {{path_log}}
+         hostname -s 1>> {{path_log}}
+         echo >> {{path_log}}
+         cat {{tmp_folder}}/vgs 1>> {{path_log}}
+         
+- name: lvs
+  shell: 'lvs > {{tmp_folder}}/lvs && chmod 0755 {{tmp_folder}}/lvs'
+  become: true
+
+- name: save lvs
+  shell: |
+         echo >> {{path_log}}
+         cat {{tmp_folder}}/lvs 1>> {{path_log}}
+         echo **************************************** >> {{path_log}}
+         
