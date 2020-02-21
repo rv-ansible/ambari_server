@@ -5,7 +5,6 @@
   any_errors_fatal: True
   vars:
     tmp_folder: /tmp/partition_disk                    
-    send_mail: false
     include_mpath: false
     letters:           # these are the disks like /dev/sdb /dev/sdc
        - b
@@ -21,18 +20,18 @@
     - { role: mail_logs, create_log: true, lines: true } 
     - { role: disk, get_raw_disk_prefix: true, become: true, include_mpath: false }
     - { role: disk, get_raw_disk: true, become: true }
-    - { role: mail_logs, mail: true } 
+    - { role: mail_logs, mail: false } 
   tags: get_raw_disk   
   
 - name: Create inventory
   hosts: all 
   vars:
-    tmp_folder: /tmp/partition_disk                    
-    fs_name: /hadoop      # extra vars --file system name -ex /opt/tools or /hadoop
-    logical_name: hadoop # extra vars --logical name like tools --toolsvg --toolslv
-    multiple_disk: true  # extra vars --true is designed for /hadoop/1, /hadoop/2 partitioning, false for single partition like dynatrace
+    tmp_folder: /tmp/partition_disk
+    fs_name: /opt/tools      # extra vars --file system name -ex /opt/tools or /hadoop
+    logical_name: tools # extra vars --logical name like tools --toolsvg --toolslv
+    multiple_disk: false  # extra vars --true is designed for /hadoop/1, /hadoop/2 partitioning, false for single partition like dynatrace
                          # meaning multiple disk per server or sing disk per server
-    count_disk: 2        # how many disk you want to create on multiple_disk=true
+    count_disk: 1        # how many disk you want to create on multiple_disk=true
     letters:             # these are the disks like /dev/sdb /dev/sdc 
        - b
        - c
