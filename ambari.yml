@@ -1,7 +1,7 @@
 ---
 
 - name: Configure User and set no password for ambari
-  hosts: ambari-member # all
+  hosts: all # all
   become: true
   any_errors_fatal: True
   vars: 
@@ -14,11 +14,11 @@
           3231
     u_mask: "022"
   roles:
-    #- { role: config, add_user: true, user1: ambari }
-    #- { role: config, miscellaneous: true, user1: ambari, sudoer: true, adgroup: "", adnetbios: "" }
-    #- { role: config, miscellaneous: true, user1: root, sudoer: false, adgroup: "", adnetbios: "" }
+    - { role: config, add_user: true, user1: ambari }
+    - { role: config, miscellaneous: true, user1: ambari, sudoer: true, adgroup: "", adnetbios: "" }
+    - { role: config, miscellaneous: true, user1: root, sudoer: false, adgroup: "", adnetbios: "" }
     #- { role: config, miscellaneous: true, user1: app_admin, sudoer: true, adgroup: "app_group", adnetbios: "TEST007" }
-    #- { role: config, add_sshkey: true, user1: ambari }  
+    - { role: config, add_sshkey: true, user1: ambari }  
     - { role: config, add_sshkey: true, user1: root }
     #- { role: config, add_sshkey2: true, user1: app_admin, adnetbios: "TEST007" }
   tags: configure_user
@@ -41,7 +41,7 @@
   tags: configure_server
 
 - name: Configure Server All
-  hosts: ambari-member
+  hosts: all # all
   become: true
   any_errors_fatal: True
   vars:
@@ -49,6 +49,8 @@
     install_dir: /usr/java
     rhel_7:
       - java-1.8.0-openjdk-devel.x86_64
+      - dos2unix
+      - python-requests     
     dbname: oracle    
   roles:
     - { role: config, yum: true }
@@ -78,7 +80,7 @@
   tags: ambari_yum
 
 - name: Copy ambari yum to all
-  hosts: ambari-member
+  hosts: all # all
   become: true
   any_errors_fatal: True  
   vars:
@@ -121,25 +123,8 @@
   tags: 
      - ambari_master_member
 
-- name: Install Ambari agent Master # IF ONE MASTER
-  hosts: master
-  become: true
-  any_errors_fatal: True
-  vars:
-     ambariserverlist:
-        - ambari-agent
-        - ambari-metrics-monitor
-        - ambari-metrics-collector
-        - ambari-metrics-hadoop-sink
-        - ambari-infra-solr-client
-        - hdp-select
-  roles:
-    - { role: config, ambari_server: true }
-  tags: 
-     - ambari_master_member_one_master
-
-- name: Install Ambari agent kakfa/spark
-  hosts: client
+- name: Install Ambari agent
+  hosts: worker # worker
   become: true
   any_errors_fatal: True
   vars:
@@ -154,7 +139,7 @@
      - ambari_agent
      
 - name: Run ambari-agent
-  hosts: ambari-member
+  hosts: all # all
   become: true
   any_errors_fatal: True
   roles:
@@ -238,7 +223,7 @@
      - disable_tmp_cleanup
                                                             
 - name: after install -copy ambarisudo
-  hosts: ambari-member 
+  hosts: all # all
   become: true
   any_errors_fatal: True
   roles:

@@ -65,27 +65,19 @@
                 - set_fact: continue_x=false
               when: y is failed
           when: x is not failed    
-        - name: partprobe
-          shell: partprobe
-          register: x
-        - block:   
-            - debug: 
-                msg:
-                  - '***Error*** run of partprobe! #########################' 
-                  - '{{x.msg}}'
-            - set_fact: continue_x=false
-          when: x is failed
-        - name: reload daemon
-          shell: systemctl daemon-reload 
-          register: y
-        - block:   
-            - debug: 
-                msg:
-                  - '***Error*** run of reload-daemon! ######################' 
-                  - '{{y.msg}}'
-            - set_fact: continue_x=false
-          when: y is failed
-      when: continue_x == true # for failsafe ok          
+        - block:
+           - name: partprobe (if mpath)
+             shell: partprobe
+             register: x
+           - block:   
+               - debug: 
+                   msg:
+                     - '***Error*** run of partprobe!' 
+                     - '{{x.msg}}'
+               - set_fact: continue_x=false
+             when: x is failed
+          when: disk1|regex_search('mpath')
+      when: continue_x==true # for failsafe ok          
   when: disk_process|regex_search('D') and continue_x==true
 
 ############## create pv ##############

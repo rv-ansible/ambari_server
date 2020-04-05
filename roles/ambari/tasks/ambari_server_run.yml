@@ -7,10 +7,12 @@
 - meta: flush_handlers
 
 - name: Run Ambari-server setup 
-  shell: # ambari-server setup --databasehost=serverora-dvp.srv.venerari.net  --databasename=AMBARI  --databaseusername=AMBARI --oraclechema=PDDFPU2  --databasepassword=AMBARI  --databaseport=1521 --database=oracle  -s
-         # /var/lib/ambari-server/resources/Ambari-DDL-Oracle-CREATE.sql
+  shell: |
+       ambari-server setup --databasehost=db.test007.org  --databasename=ambari  --databaseusername=ambari --oraclechema=PDDFPU2  --databasepassword=ambari --databaseport=5432 --database={{database}}  -s
   notify: Restart ambari-server
-  
+ 
+- meta: end_play
+############################  
 
 - name: Run Ambari-server setup jdbc driver
   shell: "/usr/sbin/ambari-server setup --jdbc-db={{dbname}} --jdbc-driver={{oracle_jdk_var_lib}}"

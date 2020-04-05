@@ -1,24 +1,18 @@
 [master]
-master1 ansible_host=192.168.3.128
+rhel76-1 ansible_host=192.168.3.129
 
 [master-member] 
-master2 ansible_host=192.168.3.129
+rhel76-1 ansible_host=192.168.3.129
 
-[client]
-kafka ansible_host=192.168.3.130
-spark ansible_host=192.168.3.131
+[kafka]
+rhel76-2 ansible_host=192.168.3.130
 
-[client2:children]
-master-member
-client
+[spark]
+rhel76-3 ansible_host=192.168.3.132
 
-[ambari-member:children]  # all
-master
-client2
+[worker:children]
+kafka
+spark
 
-[master-member2:children]
-master
-master-member
-
-#[sql]
-#db ansible_host=192.168.3.134
+[sql]
+db ansible_host=192.168.3.139

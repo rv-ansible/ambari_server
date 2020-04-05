@@ -4,6 +4,7 @@
   hosts: all 
   any_errors_fatal: True
   vars:
+    send_mail: false
     tmp_folder: /tmp/partition_disk                    
     include_mpath: false
     letters:           # these are the disks like /dev/sdb /dev/sdc
@@ -20,25 +21,33 @@
     - { role: mail_logs, create_log: true, lines: true } 
     - { role: disk, get_raw_disk_prefix: true, become: true, include_mpath: false }
     - { role: disk, get_raw_disk: true, become: true }
-    - { role: mail_logs, mail: false } 
+    - { role: mail_logs, mail: true } 
   tags: get_raw_disk   
   
 - name: Create inventory
   hosts: all 
   vars:
     tmp_folder: /tmp/partition_disk
-    fs_name: /opt/tools      # extra vars --file system name -ex /opt/tools or /hadoop
-    logical_name: tools # extra vars --logical name like tools --toolsvg --toolslv
-    multiple_disk: false  # extra vars --true is designed for /hadoop/1, /hadoop/2 partitioning, false for single partition like dynatrace
+    fs_name: /hadoop      # extra vars --file system name -ex /opt/tools or /hadoop
+    logical_name: hadoop # extra vars --logical name like tools --toolsvg --toolslv
+    multiple_disk: true  # extra vars --true is designed for /hadoop/1, /hadoop/2 partitioning, false for single partition like dynatrace
                          # meaning multiple disk per server or sing disk per server
-    count_disk: 1        # how many disk you want to create on multiple_disk=true
-    letters:             # these are the disks like /dev/sdb /dev/sdc 
+    count_disk: 2        # how many disk you want to create on multiple_disk=true
+    letters:             # these are the disks like /dev/sdb /dev/sdc -add more ...
        - b
        - c
        - d
        - e
+       - f
+       - g
+       - h
+       - i 
+       - j
+       - k
     skip_disks:   # extra-vars or survey ex server1sdb or edit the extra-vars ex - server1sde  --it will skop the disk sde on server1
     raw_prefix: "" 
+    partition: 1
+    disk_size: +100%FREE
     path_log:
     log_file:
     filename1: email
@@ -54,19 +63,16 @@
   hosts: all
   become: true
   any_errors_fatal: True
-  vars:
-    partition: 1
-    include_mpath: false
-    skip_disks:   # extra-vars or survey ex server1sdb or edit the extra-vars ex - serversde
+  vars: 
     disk_items:
-      - { server0: master1, disk0: sdb, fsname0: '/hadoop/1', vgname0: hadoop1vg, lvname0: hadoop1lv, size0: 5g } # 21.5
-      - { server0: master1, disk0: sdc, fsname0: '/hadoop/2', vgname0: hadoop2vg, lvname0: hadoop2lv, size0: 5g } # 21.5
-      - { server0: master2, disk0: sdb, fsname0: '/hadoop/1', vgname0: hadoop1vg, lvname0: hadoop1lv, size0: 5g } # 21.5
-      - { server0: master2, disk0: sdc, fsname0: '/hadoop/2', vgname0: hadoop2vg, lvname0: hadoop2lv, size0: 5g } # 21.5
-      - { server0: kafka, disk0: sdb, fsname0: '/hadoop/1', vgname0: hadoop1vg, lvname0: hadoop1lv, size0: 5g } # 21.5
-      - { server0: kafka, disk0: sdc, fsname0: '/hadoop/2', vgname0: hadoop2vg, lvname0: hadoop2lv, size0: 5g } # 21.5
-      - { server0: spark, disk0: sdb, fsname0: '/hadoop/1', vgname0: hadoop1vg, lvname0: hadoop1lv, size0: 5g } # 21.5
-      - { server0: spark, disk0: sdc, fsname0: '/hadoop/2', vgname0: hadoop2vg, lvname0: hadoop2lv, size0: 5g } # 21.5
+         - { server0: rhel76-1, disk0: sdb, partition0: 1, fsname0: '/hadoop/1', vgname0: hadoop1vg, lvname0: hadoop1lv, size0: +100%FREE } # 42.9
+         - { server0: rhel76-1, disk0: sdc, partition0: 1, fsname0: '/hadoop/2', vgname0: hadoop2vg, lvname0: hadoop2lv, size0: +100%FREE } # 42.9
+         - { server0: rhel76-3, disk0: sdb, partition0: 1, fsname0: '/hadoop/1', vgname0: hadoop1vg, lvname0: hadoop1lv, size0: +100%FREE } # 42.9
+         - { server0: rhel76-3, disk0: sdc, partition0: 1, fsname0: '/hadoop/2', vgname0: hadoop2vg, lvname0: hadoop2lv, size0: +100%FREE } # 42.9
+         - { server0: rhel76-2, disk0: sdb, partition0: 1, fsname0: '/hadoop/1', vgname0: hadoop1vg, lvname0: hadoop1lv, size0: +100%FREE } # 42.9
+         - { server0: rhel76-2, disk0: sdc, partition0: 1, fsname0: '/hadoop/2', vgname0: hadoop2vg, lvname0: hadoop2lv, size0: +100%FREE } # 42.9
+    #disk_size_2check: 10     # not use?
+    continue_x: true
   tasks:
     - name: Loop over role
       include_role:
@@ -77,6 +83,7 @@
         server: "{{ item.server0 }}"
         disk1:  "{{ item.disk0 }}"
         pvname: "{{ item.disk0 }}"
+        partition: "{{ item.partition0 }}"
         fsname: "{{ item.fsname0 }}"
         vgname: "{{ item.vgname0 }}"
         lvname: "{{ item.lvname0 }}"
