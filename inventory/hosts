@@ -1,18 +1,26 @@
 [master]
-rhel76-1 ansible_host=192.168.3.129
+master1.test007.org
 
 [master-member] 
-rhel76-1 ansible_host=192.168.3.129
+master1.test007.org
 
 [kafka]
-rhel76-2 ansible_host=192.168.3.130
+kafka1.test007.org
 
 [spark]
-rhel76-3 ansible_host=192.168.3.132
+spark1.test007.org
 
 [worker:children]
 kafka
 spark
 
+[master-worker:children]
+kafka
+spark
+master
+
 [sql]
-db ansible_host=192.168.3.139
+db.test007.org
+
+[yum]
+spark1.test007.org

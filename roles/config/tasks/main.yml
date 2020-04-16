@@ -45,6 +45,6 @@
 - include_tasks: move_log.yml
   when: move_log|default(False)==True    
  
-#- include_tasks: test.yml
-#  when: test|default(False)==True    
-  
+- include_tasks: misc2.yml
+  when: misc2|default(False)==True    
+    

@@ -24,7 +24,7 @@
     regexp:       '^{{user1}}'
     line:         '{{user1}} ALL=(ALL) NOPASSWD: ALL'
     validate:     'visudo -cf %s'     
-  when: sudoer|default(False)==True and adgroup|trim == "" and user1!='ambari'    
+  when: sudoer|default(False)==True and adgroup|trim == ""    
     
 - name: Allow {{adgroup}} to sudoers
   lineinfile:
@@ -33,5 +33,5 @@
     regexp:       '^%{{adnetbios}}\\{{adgroup}}'
     line:         '%{{adnetbios}}\\{{adgroup}} ALL=(ALL) NOPASSWD: ALL'
     validate:     'visudo -cf %s'     
-  when: sudoer|default(False)==True and adgroup|trim != "" and user1!='ambari'
+  when: sudoer|default(False)==True and adgroup|trim != ""
         

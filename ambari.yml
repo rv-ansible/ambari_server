@@ -1,7 +1,7 @@
 ---
 
 - name: Configure User and set no password for ambari
-  hosts: all # all
+  hosts: master-worker # all
   become: true
   any_errors_fatal: True
   vars: 
@@ -21,44 +21,39 @@
     - { role: config, add_sshkey: true, user1: ambari }  
     - { role: config, add_sshkey: true, user1: root }
     #- { role: config, add_sshkey2: true, user1: app_admin, adnetbios: "TEST007" }
-  tags: configure_user
+  tags: configure_user ##################
 
-- name: Configure Server master only
-  hosts: master
+- name: Configure spark1 to httpd/createrepo for yum
+  hosts: yum # yum
   become: true
   any_errors_fatal: True
   vars:
-    Package_name: jdk-8u181-linux-x64.tar.gz
-    install_dir: /usr/java
-    oracle_jdk_var_lib:  /var/lib/ambari-server/ojdbc8.jar
-    oracle_jdk_usr_share:  /usr/share/java/ojdbc8.jar
     rhel_7:
       - httpd
       - createrepo     
-    dbname: oracle    
   roles:
     - { role: config, yum: true }
-  tags: configure_server
+  tags: configure_server ##################
 
 - name: Configure Server All
-  hosts: all # all
+  hosts: master-worker # all
   become: true
   any_errors_fatal: True
   vars:
-    Package_name: jdk-8u181-linux-x64.tar.gz
-    install_dir: /usr/java
     rhel_7:
       - java-1.8.0-openjdk-devel.x86_64
       - dos2unix
-      - python-requests     
-    dbname: oracle    
+      - python-requests 
+      - ntp
+      - deltarpm    
   roles:
     - { role: config, yum: true }
     - { role: config, selinux: true, reboot: false } # SELINUX NEED REBOOT TO TAKE EFFECT
-  tags: configure_server
- 
+    - { role: config, misc2: true } 
+  tags: configure_server ##################
+   
 - name: Download ambari yum
-  hosts: master # master
+  hosts: yum # yum
   become: true
   any_errors_fatal: True  
   vars:
@@ -77,17 +72,17 @@
   roles:
     - { role: ambari , download_repo: true }
     - { role: ambari , createrepo: true }
-  tags: ambari_yum
+  tags: ambari_yum ##################
 
 - name: Copy ambari yum to all
-  hosts: all # all
+  hosts: master-worker # all
   become: true
   any_errors_fatal: True  
   vars:
-    hostrepo: "{{groups['master'][0]}}" 
+    hostrepo: "{{groups['yum'][0]}}" 
   roles:
     - { role: config , copyrepo: true }
-  tags: ambari_yum
+  tags: ambari_yum ##################
 
 - name: Install Ambari Server Master
   hosts: master # master
@@ -96,15 +91,11 @@
   vars:
      ambariserverlist:
         - ambari-server
-        - ambari-metrics-monitor
-        - ambari-metrics-grafana
         - ambari-agent
-        - ambari-metrics-hadoop-sink
-        - hdp-select
   roles:
     - { role: config, ambari_server: true }
   tags: 
-     - ambari_master1
+     - ambari_master1 ##################
 
 - name: Install Ambari agent Master-member
   hosts: master-member # master-member
@@ -113,15 +104,10 @@
   vars:
      ambariserverlist:
         - ambari-agent
-        - ambari-metrics-monitor
-        - ambari-metrics-collector
-        - ambari-metrics-hadoop-sink
-        - ambari-infra-solr-client
-        - hdp-select
   roles:
     - { role: config, ambari_server: true }
   tags: 
-     - ambari_master_member
+     - ambari_master_member ##################
 
 - name: Install Ambari agent
   hosts: worker # worker
@@ -130,24 +116,22 @@
   vars:
      ambariserverlist:
         - ambari-agent
-        - ambari-metrics-monitor
-        - ambari-metrics-hadoop-sink
-        - hdp-select
   roles:
     - { role: config, ambari_server: true }
   tags: 
-     - ambari_agent
+     - ambari_agent ##################
      
+               
 - name: Run ambari-agent
-  hosts: all # all
+  hosts: master-worker # all
   become: true
   any_errors_fatal: True
   roles:
     - { role: ambari, ambari_agent_run: true }
   tags: 
-     - ambari_agent_run
+     - ambari_agent_run ##################
             
-- name: download jdbc /var/lib/ambari-server
+- name: download jdbc /var/lib/ambari-server oracle
   hosts: master
   become: true
   any_errors_fatal: True
@@ -159,7 +143,7 @@
     - { role: ambari, ojdbc: true, artifacts_dest: '/var/lib/ambari-server/', owner_folder: ambari, group_folder: root, owner_file: ambari, group_file: root }
     - { role: ambari, ojdbc: true, artifacts_dest: '/usr/share/java/', owner_folder: root, group_folder: root, owner_file: root, group_file: root }
   tags: 
-     - download_jdbc
+     - download_jdbc_oracle ##################
      
 - name: Apply the database role to the ambari-server group
   hosts: sql
@@ -168,32 +152,19 @@
   roles:
     - role: database
       #when: database != "embedded" and not database_options.external_hostname|default('')
-  tags: database  
-  
-# master1: ambari-server setup --jdbc-db=postgres --jdbc-driver=/root/postgresql.jar  # not needed here
-
-# db: 
-# sudo -u postgres psql 
-    # CREATE DATABASE ambari;
-    # CREATE USER ambari WITH PASSWORD 'ambari';
-    # GRANT ALL PRIVILEGES ON DATABASE ambari TO ambari;
-# /var/lib/pgsql/9.2/data/pg_hba.conf     
-    # # IPv4 local connections:
-    # host    all             all             127.0.0.1/32            ident
-    # host    all             all             192.168.3.128/24        md5
-# service postgresql-9.2 restart
+  tags: database ##################  
         
   
-- name: Apply the ambari-server role to the ambari-server group
+- name: Apply the ambari-server setup for Postgres
   hosts: master
   any_errors_fatal: true
   become: yes
   roles:
-    - ambari-server
+    - { role: ambari-server, ambari_setup_postgres: true, when: database == "postgres" }
   tags: 
-     - ambari-server                        
+     - ambari_setup_postgres ##################                        
                              
-- name: Run ambari-server
+- name: Run ambari-server for Oracle
   hosts: master
   become: true
   any_errors_fatal: True
@@ -223,7 +194,7 @@
      - disable_tmp_cleanup
                                                             
 - name: after install -copy ambarisudo
-  hosts: all # all
+  hosts: master-worker # all
   become: true
   any_errors_fatal: True
   roles:
