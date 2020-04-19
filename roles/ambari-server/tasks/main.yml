@@ -3,3 +3,6 @@
 - include_tasks: ambari_setup_postgres.yml
   when: ambari_setup_postgres|default(False)==True
   
+- include_tasks: ambari_blueprint.yml
+  when: ambari_blueprint|default(False)==True
+  

@@ -21,7 +21,9 @@
     - { role: config, add_sshkey: true, user1: ambari }  
     - { role: config, add_sshkey: true, user1: root }
     #- { role: config, add_sshkey2: true, user1: app_admin, adnetbios: "TEST007" }
-  tags: configure_user ##################
+  tags: 
+    - configure_user ##################
+
 
 - name: Configure spark1 to httpd/createrepo for yum
   hosts: yum # yum
@@ -33,7 +35,9 @@
       - createrepo     
   roles:
     - { role: config, yum: true }
-  tags: configure_server ##################
+  tags: 
+    - configure_server ##################
+
 
 - name: Configure Server All
   hosts: master-worker # all
@@ -50,7 +54,9 @@
     - { role: config, yum: true }
     - { role: config, selinux: true, reboot: false } # SELINUX NEED REBOOT TO TAKE EFFECT
     - { role: config, misc2: true } 
-  tags: configure_server ##################
+  tags: 
+    - configure_server ##################
+
    
 - name: Download ambari yum
   hosts: yum # yum
@@ -72,7 +78,10 @@
   roles:
     - { role: ambari , download_repo: true }
     - { role: ambari , createrepo: true }
-  tags: ambari_yum ##################
+  tags: 
+    - ambari_yum ##################
+    - test1
+
 
 - name: Copy ambari yum to all
   hosts: master-worker # all
@@ -82,7 +91,10 @@
     hostrepo: "{{groups['yum'][0]}}" 
   roles:
     - { role: config , copyrepo: true }
-  tags: ambari_yum ##################
+  tags: 
+    - ambari_yum ##################
+    - test1
+
 
 - name: Install Ambari Server Master
   hosts: master # master
@@ -92,10 +104,15 @@
      ambariserverlist:
         - ambari-server
         - ambari-agent
+        - ambari-metrics-hadoop-sink
+        - ambari-metrics-monitor
+        - hdp-select
   roles:
     - { role: config, ambari_server: true }
   tags: 
      - ambari_master1 ##################
+     - test1
+     - test2
 
 - name: Install Ambari agent Master-member
   hosts: master-member # master-member
@@ -109,6 +126,7 @@
   tags: 
      - ambari_master_member ##################
 
+
 - name: Install Ambari agent
   hosts: worker # worker
   become: true
@@ -116,10 +134,31 @@
   vars:
      ambariserverlist:
         - ambari-agent
+        - ambari-metrics-grafana
+        - ambari-metrics-monitor
+        - ambari-metrics-hadoop-sink
+        - ambari-metrics-collector
+        - hdp-select
   roles:
     - { role: config, ambari_server: true }
   tags: 
      - ambari_agent ##################
+     - test1
+     - test2
+
+- name: Install spark only
+  hosts: spark # worker
+  become: true
+  any_errors_fatal: True
+  vars:
+     ambariserverlist:
+        - ambari-metrics-collector
+  roles:
+    - { role: config, ambari_server: true }
+  tags: 
+     - ambari_spark ##################
+     - test1
+     - test2
      
                
 - name: Run ambari-agent
@@ -130,6 +169,8 @@
     - { role: ambari, ambari_agent_run: true }
   tags: 
      - ambari_agent_run ##################
+     - test1
+
             
 - name: download jdbc /var/lib/ambari-server oracle
   hosts: master
@@ -144,6 +185,7 @@
     - { role: ambari, ojdbc: true, artifacts_dest: '/usr/share/java/', owner_folder: root, group_folder: root, owner_file: root, group_file: root }
   tags: 
      - download_jdbc_oracle ##################
+
      
 - name: Apply the database role to the ambari-server group
   hosts: sql
@@ -151,8 +193,8 @@
   become: yes
   roles:
     - role: database
-      #when: database != "embedded" and not database_options.external_hostname|default('')
-  tags: database ##################  
+  tags: 
+    - database ##################  
         
   
 - name: Apply the ambari-server setup for Postgres
@@ -162,7 +204,30 @@
   roles:
     - { role: ambari-server, ambari_setup_postgres: true, when: database == "postgres" }
   tags: 
-     - ambari_setup_postgres ##################                        
+     - ambari_setup_postgres ##################
+     - test1  
+     - test2                      
+
+
+- name: Apply the ambari-server blueprint
+  hosts: master
+  any_errors_fatal: true
+  become: yes
+  vars:
+    clustername: hadoop1
+    hadoop_version: 3.1.4.0-315
+    reponame1: HDP-3.1.4.0
+    reponame2: HDP-UTILS
+    stack_version: 3.1
+  roles:
+    - { role: ambari-server, ambari_blueprint: true }
+  tags: 
+     - ambari_blueprint ##################
+     - test1    
+     - test2                    
+
+# remove api.csrf 
+# turn on ssl
                              
 - name: Run ambari-server for Oracle
   hosts: master
@@ -171,9 +236,9 @@
   vars:
     user1: AMBARI
   roles:
-    - { role: ambari, ambari_server_run: true }
+    - { role: ambari, ambari_server_run: true, when: database == "oracle"  }
   tags: 
-     - ambari_server_run                        
+     - ambari_setup_oracle ##################                        
 
 - name: Disable tmp cleanup
   hosts: ambari-member
@@ -191,7 +256,7 @@
     - { role: config, disable_tmp_cleanup: true }
     #- { role: config, move_log: true }
   tags: 
-     - disable_tmp_cleanup
+     - disable_tmp_cleanup ##################
                                                             
 - name: after install -copy ambarisudo
   hosts: master-worker # all
@@ -200,5 +265,5 @@
   roles:
     - { role: config, after_install: true }
   tags: 
-     - after_install
+     - after_install ##################
                                                             

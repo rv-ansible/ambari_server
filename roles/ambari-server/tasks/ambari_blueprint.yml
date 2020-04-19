@@ -1,0 +1,71 @@
+---
+
+- name: Copy blueprint
+  copy:
+    src: blueprint.json
+    dest: /tmp/blueprint.json
+    
+- name: Replace blueprint node1
+  shell: |
+       sed -i 's/node1.domain.com/{{hostvars[groups['master'][0]].inventory_hostname}}/g' /tmp/blueprint.json
+       
+- name: Replace blueprint node2
+  shell: |
+       sed -i 's/node2.domain.com/{{hostvars[groups['kafka'][0]].inventory_hostname}}/g' /tmp/blueprint.json
+
+- name: Replace blueprint node3
+  shell: |
+       sed -i 's/node3.domain.com/{{hostvars[groups['spark'][0]].inventory_hostname}}/g' /tmp/blueprint.json
+
+- name: Replace blueprint clustername
+  shell: |
+       sed -i 's/clustername_here/{{clustername}}/g' /tmp/blueprint.json
+
+- name: create repo1 json
+  template:
+    src: repo1.j2
+    dest: /tmp/repo1.json
+    owner: root
+
+- name: create repo2 json
+  template:
+    src: repo2.j2
+    dest: /tmp/repo2.json
+    owner: root
+    
+- name: create clustertemplate json
+  template:
+    src: clustertemplate.j2
+    dest: /tmp/clustertemplate.json
+    owner: root
+
+- name: execute blueprint json
+  shell: |
+       curl -H "X-Requested-By: ambari" -u admin:admin -X POST http://localhost:8080/api/v1/blueprints/{{clustername}} \
+       -d @blueprint.json 
+  args:
+    chdir: /tmp
+           
+- name: execute repo1 json
+  shell: |
+       curl -H "X-Requested-By: ambari" -X PUT -u admin:admin \
+       http://localhost:8080/api/v1/stacks/HDP/versions/3.1/operating_systems/redhat7/repositories/HDP-3.1 \
+       -d @repo1.json
+  args:
+    chdir: /tmp
+           
+- name: execute repo2 json
+  shell: |
+       curl -H "X-Requested-By: ambari" -X PUT -u admin:admin \
+       http://localhost:8080/api/v1/stacks/HDP/versions/3.1/operating_systems/redhat7/repositories/HDP-3.1 \
+       -d @repo2.json
+  args:
+    chdir: /tmp
+           
+- name: execute clustertemplate json
+  shell: |
+       curl -u admin:admin -X POST http://localhost:8080/api/v1/clusters/{{clustername}} \
+       -d @clustertemplate.json
+  args:
+    chdir: /tmp
+           

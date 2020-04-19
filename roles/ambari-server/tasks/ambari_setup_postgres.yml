@@ -31,32 +31,22 @@
     line: "ambari-server.user=ambari"
     state: present
 
-- name: Run Ambari-server setup jdbc 
+- name: Run Ambari-server setup 
   shell: |
        /usr/sbin/ambari-server setup --jdbc-db={{ database }} --jdbc-driver={{ lookup('vars', database + '_jdbc_location') }}
-       
-- meta: flush_handlers       
-       
+
 - name: Run Ambari-server setup 
   shell: |       
        /usr/sbin/ambari-server setup --databasehost={{ database_options.external_hostname|default(ansible_fqdn,true) }}  --databasename=ambari \
        --databaseusername=ambari --postgresschema=ambari \ --databasepassword=ambari --databaseport=5432 --database={{database}} -s
-          
-- meta: flush_handlers          
-          
-- name: Run Ambari-server setup java
-  shell: |        
+
+- name: Run Ambari-server setup 
+  shell: |       
        /usr/sbin/ambari-server setup -s {{ ambari_java_options|default("") }} {{ ambari_database_options|default("") }}
        
-- meta: flush_handlers       
-
-- name: Run Ambari-server setup pam
-  shell: |                           
+- name: Run Ambari-server setup 
+  shell: |       
        /usr/sbin/ambari-server setup-pam --pam-config-file=/etc/pam.d/login --pam-auto-create-groups=true
-
-- meta: flush_handlers       
-
-#- meta: end_play ###########
 
 - name: Increase the Ambari Server startup timeout
   lineinfile:
@@ -64,6 +54,10 @@
     state: present
     line: 'server.startup.web.timeout=120'
   notify: Restart ambari-server
+  
+- name: Disable api.csrf
+  shell: |  
+       echo 'api.csrfPrevention.enabled=false' >> /etc/ambari-server/conf/ambari.properties
 
 - meta: flush_handlers
 

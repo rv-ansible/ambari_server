@@ -14,7 +14,7 @@
   with_items: "{{artifactslist}}"
   when: donotexec|default(False)==True    
 
-- name: Extract {{ item }}
+- name: Extract {{ item.name }}
   shell: "tar -xvzf {{ artifacts_dest }}{{ item.name }}"
   args:
      chdir: "{{ artifacts_dest }}" 
@@ -23,7 +23,7 @@
   with_items:
     - "{{artifactslist}}"
 
-- name: Delete {{ item }}
+- name: Delete {{ item.name }}
   file:
     path: "{{ artifacts_dest }}{{ item.name }}"
     state: absent
